@@ -1,6 +1,6 @@
 # user stories
 
-1. As someone who loves little creatures but is very allergic to them, I want a game to pet and play with some, and feed them treats.
+1. As someone who loves little creatures but is very allergic to them, I want a game to pet and play with some, and feed them treats.<br>
     *Exception*: Pet doesn't like the treat the user bought them.<br>
     If the pet doesn't like the treat the user bought, we can tell them what pets at the cafe do like that treat.<br>
     *Exception*: The user tries to buy treats but has insufficient gold.<br>
@@ -12,16 +12,16 @@
 3. As a user, I want to be able to access my inventory to see how many fruits and how much gold I have. <br>
    *Exception*: The user is upset that they don't have enough gold, fruits, etc in their inventory. <br>
    Tell them ways they can increase each item.
-5. As an avid petcafe user, I want to earn gold by interacting with the pets.
+5. As an avid petcafe user, I want to earn gold by interacting with the pets.<br>
    *Exception*: The user tries to interact with a pet with a full happiness level.<br>
    Tell the user the pet is satisfied, and to come back later.<br>
 6. As someone who loves all kinds of pets, I want to be able to see a list of available pets to play with.
 7. As someone who enjoys fun and quick websites to explore after a long and stressful day, I want to be able to feel at ease while
-   playing with cute virtual creatures.
-   *Exception*: The user becomes angry because this game is no longer relaxing for them.
+   playing with cute virtual creatures.<br>
+   *Exception*: The user becomes angry because this game is no longer relaxing for them.<br>
    Give the user the option to delete their account.
 9. As someone who aims to adopt as many pets as possible, I want to be able to see my affinity level with each pet so that I can
-    plan my adoptions better.
+    plan my adoptions better. <br>
    *Exception*: The user tries to play with a non-existent pet.<br>
    Tell the user that that pet does was adopted, please choose another pet.
 10. As a consistent petcafe gamer, I want to be able to adopt the pets that I love <3<br>
