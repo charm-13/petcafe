@@ -21,7 +21,7 @@ Retrieves the catalog of items in the cafe.
         "name": "string",
         "quantity": "integer",
         "price": "integer", 
-        "satiety": "integer /* Between 1 and 100 */
+        "satiety": "integer" /* Between 1 and 100 */
     }
 ]
 ```
