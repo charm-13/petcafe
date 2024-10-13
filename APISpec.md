@@ -28,7 +28,7 @@ Retrieves the catalog of items in the cafe.
 
 ### 1.2. New Cart - `/carts/` (POST)
 
-Creates a new cart for a specific customer.
+Creates a new cart for a specific user.
 
 **Request**:
 
