@@ -91,16 +91,55 @@ Handles the checkout process for a specific cart.
 
 ## 3. User Functions
 
-### 3.1. Get User Inventory
+### 3.1. Get User Inventory `/inventory/` (GET)
 
-### 3.2. Delete User - /users/{user_id}/delete
+Retrieves the inventory of the user.
+
+**Response**:
+
+```json
+[
+    {
+        "name": "string",
+        "treats": "string",
+        "gold": "integer", 
+        "pets": "string"
+    }
+]
+```
 
 
-## 4. Cafe Functions
+### 3.2. Delete User  `/users/{user_id}/delete` (DELETE)
 
-### 4.1. Get Cafe Inventory
+Deletes user profile.
+
+**Response**:
+
+```json
+[
+    {
+        "success": "boolean"
+    }
+]
+```
 
 
-## 5. Creature Functions
+## 4. Creature Functions
 
-### 5.1. Get Creature Stats
+### 4.1. Get Creature Stats `/creatures/` (GET)
+
+Retrieves the stats of the creature.
+
+**Response**:
+
+```json
+[
+    {
+        "name": "string",
+        "hunger": "integer", /* Between 1 and 20 */
+        "favourite_treat": "integer", /* ID of favourite treat*/
+        "hated_treat": "integer", /* ID of most hated treat*/
+        "happiness": "integer" /* Between 1 and 10 */
+    }
+]
+```
