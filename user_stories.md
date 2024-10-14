@@ -1,13 +1,15 @@
 # user stories
 
-1. As someone who loves little creatures but is very allergic to them, I want a game to pet and play with some, and feed them treats.<br>
+1. As someone who loves little creatures but is very allergic to them, I want a game to pet and play with some, and feed them treats so 
+   that I can fulfill my desire to interact with silly little creatures daily.<br>
     *Exception*: Pet doesn't like the treat the user bought them.<br>
     If the pet doesn't like the treat the user bought, we can tell them what pets at the cafe do like that treat.<br>
     *Exception*: The user tries to buy treats but has insufficient gold.<br>
     Tell the user they need more gold, and they can earn more by interacting with the pets.<br>
     *Exception*: The pet's hunger level is full.<br>
     Tell the user they cannot feed that pet anymore, because they are full.<br>
-2. As someone whose parents won't let me get a dog unless I prove to them that I can commit to the dog, I want a game that needs me to interact with and feed a pet daily, so that I can prove to my parents that I can take care of a dog.
+2. As someone whose parents won't let me get a dog unless I prove to them that I can commit to the dog, I want a game that needs me to 
+   interact with and feed a pet daily, so that I can prove to my parents that I can take care of a dog.
 3. As a user, I want to be able to access my inventory to see how many fruits and how much gold I have. <br>
    *Exception*: The user is upset that they don't have enough gold, fruits, etc in their inventory. <br>
    Tell them ways they can increase each item.
