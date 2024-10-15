@@ -91,21 +91,19 @@ Handles the checkout process for a specific cart.
 
 ## 3. User Functions
 
-### 3.1. Get User Inventory `/inventory/` (GET)
+### 3.1. Get User Inventory `/inventory/{user_id}` (GET)
 
 Retrieves the inventory of the user.
 
 **Response**:
 
 ```json
-[
-    {
-        "name": "string",
-        "treats": "string",
-        "gold": "integer", 
-        "pets": "string"
-    }
-]
+{
+    "name": "string",
+    "treats": "string",
+    "gold": "integer", 
+    "pets": "string"
+}
 ```
 
 
@@ -116,11 +114,9 @@ Deletes user profile.
 **Response**:
 
 ```json
-[
-    {
-        "success": "boolean"
-    }
-]
+{
+    "success": "boolean"
+}
 ```
 
 
@@ -133,29 +129,25 @@ Retrieves the stats of the creature.
 **Response**:
 
 ```json
-[
-    {
-        "name": "string",
-        "hunger": "integer", /* Between 1 and 20 */
-        "favourite_treat": "integer", /* ID of favourite treat*/
-        "hated_treat": "integer", /* ID of most hated treat*/
-        "happiness": "integer" /* Between 1 and 10 */
-    }
-]
+{
+    "name": "string",
+    "hunger": "integer", /* Between 1 and 20 */
+    "favourite_treat": "integer", /* ID of favourite treat*/
+    "hated_treat": "integer", /* ID of most hated treat*/
+    "happiness": "integer" /* Between 1 and 10 */
+}
 ```
 
-### 4.2. Get Creature `/creatures/` (GET)
+### 4.2. Get Creature `/creatures/{creature_id}` (GET)
 
 Retrieves the list of creatures.
 
 **Request**:
 
 ```json
-
 {
     "user_id": "integer",
 }
-
 ```
 
 **Response**:
