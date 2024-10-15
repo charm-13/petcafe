@@ -143,3 +143,19 @@ Retrieves the stats of the creature.
     }
 ]
 ```
+
+### 4.2. Get Creature `/creatures/` (GET)
+
+Retrieves the list of creatures.
+
+**Response**:
+
+```json
+[
+    {
+        "name": "string",
+        "type": "string",
+        "affinity": "integer"
+    }
+]
+```
