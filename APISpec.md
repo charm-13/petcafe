@@ -151,11 +151,11 @@ Retrieves the list of creatures.
 **Request**:
 
 ```json
-[
-    {
-        "user_id": "integer",
-    }
-]
+
+{
+    "user_id": "integer",
+}
+
 ```
 
 **Response**:
