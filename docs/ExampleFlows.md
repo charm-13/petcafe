@@ -13,10 +13,10 @@ To buy that treat they:
 The user identified by id `475` has the goal of adopting all creatures available, and strategizes by prioritizing interactions with the ones they have the lowest affinity with.
 They call `GET /creatures/475` to check their affinity levels with the available creatures, and decide to interact with the creature with id `25`, who has affinity level `20` with the user.
 To satisfy the needs of the creature they do the following.
-1. Call `/GET/creatures/475/stats` and pass in a `creature_id` of 25 to get the creature's current hunger and happiness levels.
-2. Feed the creature using a treat by calling `/GET/creatures/475/feed` and passing in `creature_id` and `treat_id`.
-3. Play with the creature by calling `/GET/creatures/475/play` and passing in the `creature_id`.
-4. Check the creature's updated happiness and hunger levels using `/GET/creatures/475/stats` again.
+1. Call `GET /creatures/475/stats` and pass in a `creature_id` of 25 to get the creature's current hunger and happiness levels.
+2. Feed the creature using a treat by calling `GET /creatures/475/feed` and passing in `creature_id` and `treat_id`.
+3. Play with the creature by calling `GET /creatures/475/play` and passing in the `creature_id`.
+4. Check the creature's updated happiness and hunger levels using `GET /creatures/475/stats` again.
 5. Rinse and repeat until the creature is either full or completely happy.
 
 ## 3. Pet Cafe User Viewing Example Flow
