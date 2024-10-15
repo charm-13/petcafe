@@ -148,6 +148,16 @@ Retrieves the stats of the creature.
 
 Retrieves the list of creatures.
 
+**Request**:
+
+```json
+[
+    {
+        "user_id": "integer",
+    }
+]
+```
+
 **Response**:
 
 ```json
