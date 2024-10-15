@@ -16,5 +16,5 @@ A user with id 20 wants to view the list of pets that are available to interact 
 
 To do these actions, they:
 1. Start by calling ```GET /inventory``` to view their inventory
-2. Then call ```GET /creatures``` to view the list of available creatures
+2. Then call ```GET /creatures/20``` to view the list of available creatures and their current affinity with them.
 3. Finally, they call ```DELETE /users/20/delete``` to delete their account.
