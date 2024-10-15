@@ -80,14 +80,119 @@ Handles the checkout process for a specific cart.
 }
 ```
 
-## 2. Creature Interactions
+## 2. Creature Functions
 
-### 2.1. Feed Creature
+### 2.1. Get Creatures `/creatures/` (GET)
 
-### 2.2. Play with Creature
+Retrieves the list of creatures. Requires a user_id.
 
-### 2.3 Adopt Creature
+**Request**:
 
+```json
+{
+    "user_id": "integer",
+}
+```
+
+**Response**:
+
+```json
+[
+    {
+        "name": "string",
+        "type": "string",
+        "affinity": "integer" /* Between 0 and 100 */
+    }
+]
+```
+
+### 2.2. Get Creature Stats `/creatures/{creature_id}` (GET)
+
+Retrieves the stats of the specified creature. Requires a user_id.
+
+**Request**:
+
+```json
+{
+    "user_id": "integer",
+}
+```
+
+**Response**:
+
+```json
+{
+    "name": "string",
+    "type": "string",
+    "hunger": "integer", /* Between 0 to 100 */
+    "happiness": "integer", /* Between 0 to 100 */
+    "affinity": "integer" /* Between 0 to 100 */
+}
+```
+
+### 2.3. Feed Creature `/creatures/{creature_id}/feed` (POST)
+
+Feeds the specified creature a treat. Requires a user_id and a treat_id. Response returns the gold earned and changes in stats of the creature affected by the action, which are dependent on the treat used to feed the creature. If the creature has max hunger level at the time of the call, the treat is not decremented from the user's inventory.
+
+**Request**:
+
+```json
+{
+    "user_id": "integer",
+    "treat_id": "integer"
+}
+```
+
+**Response**:
+```json
+{
+    /* All 0 if pet is full */
+        "gold_earned": "integer", /* 0 if hated, 3 if normal, 5 if loved */
+        "change_in_hunger": "integer", /* 0 if treat is hated; else dependent on treat satiety */
+        "change_in_happiness": "integer", /* 10 if favorite, 5 if normal, -5 if hated */
+        "change_in_affinity": "integer",  /* 10 if favorite, 5 if normal, -5 if hated */
+        "treat_used": "boolean" /* False if full */
+}
+```
+
+### 2.2. Play with Creature `/creatures/{creature_id}/play` (POST)
+
+Plays with the specified creature. Increases a creature's happiness and affinity with user. Requires a user_id. Playing with a pet at max happiness does not earn the user any gold or affinity.
+
+**Request**:
+
+```json
+{
+    "user_id": "integer"
+}
+```
+
+**Response**:
+```json
+{
+    "gold_earned": "integer",
+    "affinity_earned": "integer"
+}
+```
+### 2.3 Adopt Creature `/creatures/{creature_id}/adopt` (POST)
+
+Adopts a creature. Requires a user_id. User's affinity level with the specified creature must be 100.
+
+**Request**:
+
+```json
+{
+    "user_id": "integer"
+}
+```
+
+**Response:**
+
+```json
+{
+    "success": "boolean"
+}
+```
 
 ## 3. User Functions
 
@@ -117,47 +222,4 @@ Deletes user profile.
 {
     "success": "boolean"
 }
-```
-
-
-## 4. Creature Functions
-
-### 4.1. Get Creature Stats `/creatures/` (GET)
-
-Retrieves the stats of the creature.
-
-**Response**:
-
-```json
-{
-    "name": "string",
-    "hunger": "integer", /* Between 1 and 20 */
-    "favourite_treat": "integer", /* ID of favourite treat*/
-    "hated_treat": "integer", /* ID of most hated treat*/
-    "happiness": "integer" /* Between 1 and 10 */
-}
-```
-
-### 4.2. Get Creature `/creatures/{creature_id}` (GET)
-
-Retrieves the list of creatures.
-
-**Request**:
-
-```json
-{
-    "user_id": "integer",
-}
-```
-
-**Response**:
-
-```json
-[
-    {
-        "name": "string",
-        "type": "string",
-        "affinity": "integer"
-    }
-]
 ```
