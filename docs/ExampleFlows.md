@@ -2,10 +2,10 @@
 
 ## 1. Pet Cafe User Purchasing Example Flow
 
-The user "dragonluvr5" decides that they want to buy a treat for their favorite dragon in the cafe. They check the cafe catalog by calling ```GET /catalog``` to make sure there are multiple treats available. They see the treat with SKU "BUBBLY_FIRE_TREAT" which costs 50 gold.
+The user "dragonluvr5" decides that they want to buy a treat for their favorite dragon in the cafe. They check the cafe catalog by calling ```GET /catalog``` to make sure there are multiple treats available. They see the treat with id 328 which costs 50 gold.
 To buy that treat they:
 1. Create a cart by calling ```POST /carts``` to get a cart with id 702,
-2. Then they call ```POST /carts/702/items/BUBBLY_FIRE_TREAT``` and pass in a quantity of 2.
+2. Then they call ```POST /carts/702/items/328``` and pass in a quantity of 2.
 3. Then they checkout by calling ```POST /carts/702/checkout``` and jump with glee as the treats enter their inventory. 
 
 ## 2. Pet Cafe User-Pet Interaction Example Flow
