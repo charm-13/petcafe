@@ -2,22 +2,26 @@
 
 ## 1. Pet Cafe User Purchasing Example Flow
 
-The user "dragonluvr5" decides that they want to buy a treat for their favorite dragon in the cafe. They check the cafe catalog by calling ```GET /catalog``` to make sure there are multiple treats available. They see the treat with id 328 which costs 50 gold.
+The user "dragonluvr5" decides that they want to buy a treat for their favorite dragon in the cafe. They check the cafe catalog to make sure there are multiple treats available. They see the treat with id 328 which costs 50 gold.
 To buy that treat they:
-1. Create a cart by calling ```POST /carts``` to get a cart with id 702,
-2. Then they call ```POST /carts/702/items/328``` and pass in a quantity of 2.
-3. Then they checkout by calling ```POST /carts/702/checkout``` and jump with glee as the treats enter their inventory. 
+1. Check the catalog by calling ```GET /catalog```
+2. Create a cart by calling ```POST /carts``` to get a cart with id 702,
+3. Then they call ```POST /carts/702/items/328``` and pass in a quantity of 2.
+4. Then they checkout by calling ```POST /carts/702/checkout``` and jump with glee as the treats enter their inventory. 
 
 ## 2. Pet Cafe User-Pet Interaction Example Flow
 
 The user identified by id `475` has the goal of adopting all creatures available, and strategizes by prioritizing interactions with the ones they have the lowest affinity with.
-They call `POST /creatures/475` to check their affinity levels with the available creatures, and decide to interact with the creature with id `25`, who has affinity level `20` with the user.
+They check their affinity levels with the available creatures, and decide to interact with the creature with id `25`, who has affinity level `20` with the user. Then, they adopt the creature because they see that they have enough affinity with it.
 To satisfy the needs of the creature they do the following.
-1. Call `GET /creatures/475/stats` and pass in a `creature_id` of 25 to get the creature's current hunger and happiness levels.
-2. Feed the creature using a treat by calling `POST /creatures/475/feed` and passing in `creature_id` and `treat_id`.
-3. Play with the creature by calling `POST /creatures/475/play` and passing in the `creature_id`.
-4. Check the creature's updated happiness and hunger levels using `GET /creatures/475/stats` again.
-5. Rinse and repeat until the creature is either full or completely happy.
+
+1. Call `POST /creatures/475` to view the creatures
+2. Call `GET /creatures/475/stats` and pass in a `creature_id` of 25 to get the creature's current hunger and happiness levels.
+3. Feed the creature using a treat by calling `POST /creatures/475/feed` and passing in `creature_id` and `treat_id`.
+4. Play with the creature by calling `POST /creatures/475/play` and passing in the `creature_id`.
+5. Check the creature's updated happiness and hunger levels using `GET /creatures/475/stats` again.
+6. Call `POST/creatures/475/adopt` and pass in a `creature_id` of 25 to adopt that creature
+ 
 
 ## 3. Pet Cafe User Viewing Example Flow
 
