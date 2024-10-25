@@ -82,7 +82,7 @@ Handles the checkout process for a specific cart.
 
 ## 2. Creature Functions
 
-### 2.1. Get Creatures `/creatures/{user_id}` (GET)
+### 2.1. Get Creatures `/users/{user_id}/creatures` (GET)
 
 Retrieves the list of creatures available to interact with in the cafe.
 
@@ -98,17 +98,9 @@ Retrieves the list of creatures available to interact with in the cafe.
 ]
 ```
 
-### 2.2. Get Creature Stats `/creatures/{user_id}/stats/` (GET)
+### 2.2. Get Creature Stats `/users/{user_id}/creatures/{creature_id}/stats` (GET)
 
 Retrieves the stats of the specified creature, including their current hunger and happiness levels, and their affinity with the user.
-
-**Request:**:
-
-```json
-{
-    "creature_id": "integer"
-}
-```
 
 **Response**:
 
@@ -122,18 +114,9 @@ Retrieves the stats of the specified creature, including their current hunger an
 }
 ```
 
-### 2.3. Feed Creature `/creatures/{user_id}/feed` (POST)
+### 2.3. Feed Creature `/users/{user_id}/creatures/{creature_id}/feed/{treat_id}` (POST)
 
-Feeds the specified creature a treat. Requires a treat_id. Response returns the gold earned and changes in stats of the creature affected by the action, which are dependent on the treat used to feed the creature. If the creature has max hunger level at the time of the call, the treat is not decremented from the user's inventory.
-
-**Request**:
-
-```json
-{
-    "creature_id": "integer",
-    "treat_id": "integer"
-}
-```
+Feeds the specified creature a treat of the specified id. Response returns the gold earned and changes in stats of the creature affected by the action, which are dependent on the treat used to feed the creature. If the creature has max hunger level at the time of the call, the treat is not decremented from the user's inventory.
 
 **Response**:
 
@@ -148,17 +131,9 @@ Feeds the specified creature a treat. Requires a treat_id. Response returns the 
 }
 ```
 
-### 2.2. Play with Creature `/creatures/{user_id}/play` (POST)
+### 2.2. Play with Creature `/users/{user_id}/creatures/{creature_id}/play` (POST)
 
 Plays with the specified creature. Increases a creature's happiness and affinity with user. Playing with a pet at max happiness does not earn the user any gold or affinity.
-
-**Request:**:
-
-```json
-{
-    "creature_id": "integer"
-}
-```
 
 **Response**:
 ```json
@@ -167,17 +142,9 @@ Plays with the specified creature. Increases a creature's happiness and affinity
     "affinity_earned": "integer"
 }
 ```
-### 2.3 Adopt Creature `/creatures/{user_id}/adopt` (POST)
+### 2.3 Adopt Creature `/users/{user_id}/creatures/{creature_id}/adopt` (POST)
 
 Adopts a creature. User's affinity level with the specified creature must be 100.
-
-**Request:**:
-
-```json
-{
-    "creature_id": "integer"
-}
-```
 
 **Response:**
 
@@ -189,7 +156,7 @@ Adopts a creature. User's affinity level with the specified creature must be 100
 
 ## 3. User Functions
 
-### 3.1. Get User Inventory `/inventory/{user_id}` (GET)
+### 3.1. Get User Inventory `/users/{user_id}/inventory` (GET)
 
 Retrieves the inventory of the user.
 
