@@ -8,6 +8,15 @@ create table
     constraint treats_name_key unique (name),
     constraint treats_sku_key unique (sku)
   ) tablespace pg_default;
+  INSERT INTO "public"."treats" ("sku", "name", "satiety", "price") 
+    VALUES ('CLOUD_CANDY', 'cloud candy', '15', '15'), ('CRUMBLY_COOKIE', 'crumbly cookie', '20', '20'), 
+    ('CUCUMBER_SALAD', 'cucumber salad', '30', '30'), ('GOGI_BERRY', 'gogi berry', '10', '10'), 
+    ('HONEY', 'honey', '8', '8'), ('KEBAB', 'kebab', '75', '75'), ('NABNAB_BERRY', 'nabnab berry', '15', '15'), 
+    ('PINAP_BERRY', 'pinap berry', '20', '20'), ('RAZZ_BERRY', 'razz berry', '10', '10'), 
+    ('SARDINE', 'sardine', '45', '45'), ('SEAWEED_SNACK', 'seaweed', '25', '25'), 
+    ('SHADOW_BREAD', 'shadow bread', '42', '42'), ('SHINY_BERRY', 'shiny berry', '27', '27'), 
+    ('SPICE_COOKIE', 'spice cookie', '38', '38'), ('STEAK_SKEWER', 'steak skewer', '95', '95'), 
+    ('TAIYAKI', 'taiyaki', '55', '55'), ('VANILLA_FLUFF', 'vanilla fluff', '22', '22');
 
 create table
   public.creature_types (
@@ -23,6 +32,12 @@ create table
     constraint creature_types_fav_treat_fkey foreign key (fav_treat) references treats (sku),
     constraint creature_types_hated_treat_fkey foreign key (hated_treat) references treats (sku)
   ) tablespace pg_default;
+  INSERT INTO "public"."creature_types" ("id", "type", "fav_treat", "hated_treat") 
+    VALUES ('1', 'water_turtle', 'SARDINE', 'KEBAB'), ('2', 'fire_lizard', 'SPICE_COOKIE', 'SEAWEED_SNACK'), 
+    ('3', 'grass_dragon', 'CUCUMBER_SALAD', 'SPICE_COOKIE'), ('4', 'sea_ghost', 'SHADOW_BREAD', 'CRUMBLY_COOKIE'), 
+    ('5', 'psychic_unicorn', 'SHINY_BERRY', 'SHADOW_BREAD'), ('6', 'fighter_cow', 'GOGI_BERRY', 'STEAK_SKEWER'), 
+    ('7', 'silly_cat', 'TAIYAKI', 'CUCUMBER_SALAD'), ('8', 'electric_sheep', 'CLOUD_CANDY', 'SARDINE'), 
+    ('9', 'fluffy_fairy', 'PINAP_BERRY', 'VANILLA_FLUFF'), ('10', 'flying_bug', 'VANILLA_FLUFF', 'HONEY');
 
 create table
   public.creatures (
@@ -40,6 +55,17 @@ create table
       type
     )
   ) tablespace pg_default;
+  INSERT INTO "public"."creatures" ("id", "name", "type", "happiness", "health", "hunger") 
+    VALUES ('2', 'Blaze', 'fire_lizard', '100', '100', '0'), ('3', 'Whiskaroo', 'silly_cat', '100', '100', '0'), 
+    ('4', 'Rumbull', 'fighter_cow', '100', '100', '0'), ('5', 'Spectrip', 'sea_ghost', '100', '100', '0'), 
+    ('6', 'Mindara', 'psychic_unicorn', '100', '100', '0'), ('7', 'Zap E. Wool', 'electric_sheep', '100', '100', '0'), 
+    ('8', 'Flutterbop', 'flying_bug', '100', '100', '0'), ('9', 'Puffilia', 'fluffy_fairy', '100', '100', '0'), 
+    ('10', 'Thornvyne', 'grass_dragon', '100', '100', '0'), ('11', 'Shellwater', 'water_turtle', '100', '100', '0'), 
+    ('12', 'Infernyx', 'fire_lizard', '100', '100', '0'), ('13', 'Nibbly', 'silly_cat', '100', '100', '0'), 
+    ('14', 'Brawlow', 'fighter_cow', '100', '100', '0'), ('15', 'Haunter Glow', 'sea_ghost', '100', '100', '0'), 
+    ('16', 'Mystara', 'psychic_unicorn', '100', '100', '0'), ('17', 'Shocuff', 'electric_sheep', '100', '100', '0'), 
+    ('18', 'Flyka', 'flying_bug', '100', '100', '0'), ('19', 'Fayblossom', 'fluffy_fairy', '100', '100', '0'), 
+    ('20', 'Grumblevine', 'grass_dragon', '100', '100', '0'), ('21', 'Aquaquel', 'water_turtle', '100', '100', '0');
 
 create table
   public.users (
@@ -49,7 +75,8 @@ create table
     constraint users_pkey primary key (id),
     constraint users_username_key unique (username)
   ) tablespace pg_default;
-  INSERT INTO "public"."users" ("id", "username", "gold") VALUES ('1', 'test', '0');
+  INSERT INTO "public"."users" ("id", "username", "gold") 
+    VALUES ('1', 'test', '0');
 
 create table
   public.users_inventory (
@@ -63,7 +90,8 @@ create table
     constraint users_inventory_treat_sku_fkey foreign key (treat_sku) references treats (sku) on update cascade on delete cascade,
     constraint users_inventory_user_id_fkey foreign key (user_id) references users (id) on update cascade on delete cascade
   ) tablespace pg_default;
-  INSERT INTO "public"."users_inventory" ("id", "user_id", "treat_sku", "quantity") VALUES ('1', '1', 'CLOUD_CANDY', '1'), ('2', '1', 'HONEY', '1');
+  INSERT INTO "public"."users_inventory" ("id", "user_id", "treat_sku", "quantity") 
+    VALUES ('1', '1', 'CLOUD_CANDY', '1'), ('2', '1', 'HONEY', '1');
 
 create table
   public.user_creature_connection (
@@ -83,7 +111,8 @@ create table
     constraint user_adoptions_creature_id_fkey foreign key (creature_id) references creatures (id),
     constraint user_adoptions_user_id_fkey foreign key (user_id) references users (id) on delete cascade
   ) tablespace pg_default;
-  INSERT INTO "public"."user_adoptions" ("user_id", "creature_id") VALUES ('1', '2'), ('1', '3');
+  INSERT INTO "public"."user_adoptions" ("user_id", "creature_id") 
+    VALUES ('1', '2'), ('1', '3');
 
 create table
   public.carts (
