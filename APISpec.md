@@ -165,9 +165,9 @@ Retrieves the inventory of the user.
 ```json
 {
     "name": "string",
-    "treats": "string",
+    "treats": [t] /* List of treats in the users inventory */
     "gold": "integer", 
-    "pets": "string"
+    "pets": [p] /* Pets that the user has adopted */
 }
 ```
 
