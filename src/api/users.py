@@ -18,9 +18,10 @@ def get_inventory(user_id: int):
             sqlalchemy.text("""SELECT username, gold, treat_sku, name 
                                 FROM users
                                 JOIN users_inventory ON users.id = users_inventory.user_id
-                                JOIN user_adoptions ON users.id = user_adoptions.user_id
-                                JOIN creatures ON user_adoptions.creature_id = creatures.id
-                                WHERE users.id = :id"""),
+                                JOIN user_creature_connection ON users.id = user_creature_connection.user_id
+                                JOIN creatures ON user_creature_connection.creature_id = creatures.id
+                                WHERE users.id = :id
+                                AND user_creature_connection.is_adopted = True"""),
                                 {"id": user_id}).mappings().fetchall()
 
     treats_list = []
