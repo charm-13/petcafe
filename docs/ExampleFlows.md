@@ -24,9 +24,12 @@ To satisfy the needs of the creature they do the following.
 
 ## 3. Pet Cafe User Viewing Example Flow
 
-A user with id `20` wants to view the list of pets that are available to interact with. They view the list and then check their own inventory to see what they have, if they have treats or sufficient gold. They become violently upset at the inventory and the available pets, so they decide to delete their account.
+A new user creates their account with username "dragonluvr5" and is assigned id `20`. They want to view the list of creatures that are available to interact with. 
+They view the list of pets and then check their own inventory to see what they have. They realize they have 0 gold and 0 treats and on top of that, they hate 
+the names of the pets!! They become violently upset at the situation, so they decide to delete their account.
 
 To do these actions, they:
-1. Start by calling ```GET /inventory/20``` to view their inventory
-2. Then call ```GET /creatures/20``` to view the list of available creatures and their current affinity with them.
-3. Finally, they call ```DELETE /users/20/delete``` to delete their account.
+1. Start by calling `POST /users/create` and pass in "dragonluvr5". They're assigned id `20`.
+2. Then they call ```GET /inventory/20``` to view their inventory
+3. Then call ```GET /creatures/20``` to view the list of available creatures and their current affinity with them.
+4. Finally, they call ```DELETE /users/20/delete``` to delete their account.
