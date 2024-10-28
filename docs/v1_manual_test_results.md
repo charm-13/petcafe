@@ -32,7 +32,7 @@ curl -X 'GET' \
   -H 'access_token: token' \
   -d ''
 2. [
-  {"name": "Whiskaroo", "type": "silly_cat", "affinity": 100, "is_adopted": true}, <br>
+  {"name": "Whiskaroo", "type": "silly_cat", "affinity": 100, "is_adopted": false}, <br>
   {"name": "Rumbull", "type": "fighter_cow", "affinity": 0, "is_adopted": false}, <br>
   {"name": "Spectrip", "type": "sea_ghost", "affinity": 0, "is_adopted": false}, <br>
   {"name": "Mindara", "type": "psychic_unicorn", "affinity": 0, "is_adopted": false}, <br>
@@ -49,7 +49,7 @@ curl -X 'GET' \
   {"name": "Grumblevine", "type": "grass_dragon", "affinity": 0, "is_adopted": false}, <br>
   {"name": "Aquaquel", "type": "water_turtle", "affinity": 0, "is_adopted": false}, <br>
   {"name": "Zap E. Wool", "type": "electric_sheep", "affinity": 0, "is_adopted": false}, <br>
-  {"name": "Blaze", "type": "fire_lizard", "affinity": 100, "is_adopted": true}, <br>
+  {"name": "Blaze", "type": "fire_lizard", "affinity": 100, "is_adopted": false}, <br>
   {"name": "Haunter Glow", "type": "sea_ghost", "affinity": 0, "is_adopted": false}, <br>
   {"name": "Puffilia", "type": "fluffy_fairy", "affinity": 0, "is_adopted": false}
 ]
