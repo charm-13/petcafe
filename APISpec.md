@@ -93,7 +93,8 @@ Retrieves the list of creatures available to interact with in the cafe.
     {
         "name": "string",
         "type": "string",
-        "affinity": "integer" /* Between 0 and 100 */
+        "affinity": "integer", /* Between 0 and 100 */
+        "is_aopted": "boolean"
     }
 ]
 ```
@@ -126,7 +127,7 @@ Feeds the specified creature a treat of the specified id. Response returns the g
         "gold_earned": "integer", /* 0 if hated, 3 if normal, 5 if loved */
         "change_in_hunger": "integer", /* 0 if treat is hated; else dependent on treat satiety */
         "change_in_happiness": "integer", /* 10 if favorite, 5 if normal, -5 if hated */
-        "change_in_affinity": "integer",  /* 10 if favorite, 5 if normal, -5 if hated */
+        "change_in_affinity": "integer",  /* 5 if favorite, 2 if normal, -2 if hated */
         "treat_used": "boolean" /* False if full */
 }
 ```
@@ -138,8 +139,8 @@ Plays with the specified creature. Increases a creature's happiness and affinity
 **Response**:
 ```json
 {
-    "gold_earned": "integer",
-    "affinity_earned": "integer"
+    "gold_earned": "integer", /* 2 gold */
+    "affinity_earned": "integer" /* 1 affinity point */
 }
 ```
 ### 2.3 Adopt Creature `/users/{user_id}/creatures/{creature_id}/adopt` (POST)
