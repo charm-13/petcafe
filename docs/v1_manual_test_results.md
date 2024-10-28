@@ -15,13 +15,26 @@ curl -X 'GET' \
 2. The response you received in executing the curl statement.
 
 Then they call `GET /inventory/1` to view their inventory:
-1. The curl statement called. You can find this in the /docs site for your 
-API under each endpoint. For example, for my site the /catalogs/ endpoint 
-curl call looks like:
-curl -X 'GET' \
-  'https://centralcoastcauldrons.vercel.app/catalog/' \
-  -H 'accept: application/json'
-2. The response you received in executing the curl statement.
+1. 
+curl -X 'POST' \
+  'http://127.0.0.1:3000/users/1/inventory' \
+  -H 'accept: application/json' \
+  -H 'access_token: oi1i2O9tZgaExzgC' \
+  -d ''
+
+2. 
+{
+  "name": "dragonluvr5",
+  "treats": [
+    "CLOUD_CANDY",
+    "HONEY"
+  ],
+  "gold": 0,
+  "pets": [
+    "Blaze",
+    "Whiskaroo"
+  ]
+}
    
 Then call `GET /creatures/1` to view the list of available creatures and their current affinity with them:
 1. The curl statement called. You can find this in the /docs site for your 
