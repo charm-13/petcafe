@@ -47,7 +47,7 @@ the names of the pets!! They become violently upset at the situation, so they de
     ```
 2. ```
     [
-        {"name": "Whiskaroo", "type": "silly_cat", "affinity": 100, "is_adopted": true},
+        {"name": "Whiskaroo", "type": "silly_cat", "affinity": 0, "is_adopted": false},
         {"name": "Rumbull", "type": "fighter_cow", "affinity": 0, "is_adopted": false},
         {"name": "Spectrip", "type": "sea_ghost", "affinity": 0, "is_adopted": false},
         {"name": "Mindara", "type": "psychic_unicorn", "affinity": 0, "is_adopted": false},
@@ -64,7 +64,7 @@ the names of the pets!! They become violently upset at the situation, so they de
         {"name": "Grumblevine", "type": "grass_dragon", "affinity": 0, "is_adopted": false},
         {"name": "Aquaquel", "type": "water_turtle", "affinity": 0, "is_adopted": false},
         {"name": "Zap E. Wool", "type": "electric_sheep", "affinity": 0, "is_adopted": false},
-        {"name": "Blaze", "type": "fire_lizard", "affinity": 100, "is_adopted": true},
+        {"name": "Blaze", "type": "fire_lizard", "affinity": 0, "is_adopted": false},
         {"name": "Haunter Glow", "type": "sea_ghost", "affinity": 0, "is_adopted": false},
         {"name": "Puffilia", "type": "fluffy_fairy", "affinity": 0, "is_adopted": false}
     ]
