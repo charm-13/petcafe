@@ -26,4 +26,40 @@ def get_inventory(user_id: int):
         "gold": inventory["gold"], 
         "pets": inventory["creatures"]
     }
-    
+
+
+class NewUser(BaseModel):
+    username: str
+
+
+@router.post("/create")
+def create_user(user: NewUser):
+    with db.engine.begin() as connection:
+        id = connection.execute(
+            sqlalchemy.text(
+                """
+                INSERT INTO users (username)
+                           VALUES (:username)
+                ON CONFLICT (username)
+                  DO UPDATE
+                        SET username = excluded.username
+                RETURNING id
+                """
+            ),
+            {"username": user.username},
+        ).one().id
+    return {"user_id": id}
+
+
+@router.delete("/{user_id}/delete")
+def delete_user(user_id: int):
+    with db.engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text(
+                """
+                DELETE FROM users
+                WHERE id = :user_id"""
+            ),
+            {"user_id": user_id},
+        )
+    return "OK"
