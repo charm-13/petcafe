@@ -14,31 +14,39 @@ router = APIRouter(
 @router.post("/{user_id}/inventory")
 def get_inventory(user_id: int):
     with db.engine.begin() as connection:
-        inventory = connection.execute(
-            sqlalchemy.text("""SELECT username, gold, treat_sku, name 
+        user = connection.execute(
+            sqlalchemy.text("""SELECT username, gold
                                 FROM users
-                                JOIN users_inventory ON users.id = users_inventory.user_id
-                                JOIN user_creature_connection ON users.id = user_creature_connection.user_id
-                                JOIN creatures ON user_creature_connection.creature_id = creatures.id
-                                WHERE users.id = :id
+                                WHERE users.id = :id"""),
+                                {"id": user_id}).mappings().fetchone()
+        treats = connection.execute(
+            sqlalchemy.text("""SELECT treat_sku 
+                                FROM users_treat_inventory
+                                WHERE user_id = :id"""),
+                                {"id": user_id}).mappings().fetchall()
+        pets = connection.execute(
+            sqlalchemy.text("""SELECT name 
+                                FROM user_creature_connection
+                                LEFT JOIN creatures ON user_creature_connection.creature_id = creatures.id
+                                WHERE user_id = :id
                                 AND user_creature_connection.is_adopted = True"""),
                                 {"id": user_id}).mappings().fetchall()
+        
 
-    treats_list = []
-    pets_list = []
-    username = inventory[0]["username"]
-    gold = inventory[0]["gold"]
-    for item in inventory:
-        if item["treat_sku"] not in treats_list:
-            treats_list.append(item["treat_sku"])
-        if item["name"] not in pets_list:
-            pets_list.append(item["name"])
+    treat_list = []
+    pet_list = []
+    for treat in treats:
+        treat_list.append(treat["treat_sku"])
+    for pet in pets:
+        pet_list.append(pet["name"])
+
+    print(f"Treats: {treat_list}, Pets: {pet_list}, User: {user}")
 
     return {
-        "name": username,
-        "treats": treats_list,
-        "gold": gold, 
-        "pets": pets_list
+        "name": user["username"],
+        "treats": treat_list,
+        "gold": user["gold"], 
+        "pets": pet_list
     }
 
 
