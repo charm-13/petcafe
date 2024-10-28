@@ -83,6 +83,7 @@ create table
     constraint user_adoptions_creature_id_fkey foreign key (creature_id) references creatures (id),
     constraint user_adoptions_user_id_fkey foreign key (user_id) references users (id) on delete cascade
   ) tablespace pg_default;
+  INSERT INTO "public"."user_adoptions" ("user_id", "creature_id") VALUES ('1', '2'), ('1', '3');
 
 create table
   public.carts (
