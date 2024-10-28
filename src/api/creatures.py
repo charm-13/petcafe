@@ -19,6 +19,7 @@ def get_creatures(user_id: int):
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text("""SELECT creatures.name, creatures.type, 
+                                    COALESCE(user_creature_connection.is_adopted, false) AS status,
                                     COALESCE(user_creature_connection.affinity, 0) AS affinity
                                 FROM creatures
                                 LEFT JOIN user_creature_connection 
@@ -33,7 +34,8 @@ def get_creatures(user_id: int):
         creatures.append({
             "name": creature["name"],
             "type": creature["type"],
-            "affinity": creature["affinity"]
+            "affinity": creature["affinity"],
+            "is_adopted": creature["status"]
         })
     
     return creatures
