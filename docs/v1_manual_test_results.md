@@ -21,9 +21,9 @@ curl -X 'GET' \
   -H 'access_token: token' \
   -d ''
 2. {"name": "dragonluvr5", <br>
-  "treats": ["CLOUD_CANDY", "HONEY"], <br>
+  "treats": [], <br>
   "gold": 0, <br>
-  "pets": ["Blaze", "Whiskaroo"]}
+  "pets": []}
    
 **Then call `GET /creatures/1` to view the list of available creatures and their current affinity with them:**
 1. curl -X 'POST' \
