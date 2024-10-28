@@ -171,8 +171,27 @@ Retrieves the inventory of the user.
 }
 ```
 
+### 3.2. Create User  `/users/create` (POST)
 
-### 3.2. Delete User  `/users/{user_id}/delete` (DELETE)
+Creates a new user with the specified username.
+
+**Request**:
+
+```json
+{
+  "username": "string"
+}
+```
+
+**Response**:
+
+```json
+{
+    "user_id": "integer"
+}
+```
+
+### 3.3. Delete User  `/users/{user_id}/delete` (DELETE)
 
 Deletes user profile.
 
