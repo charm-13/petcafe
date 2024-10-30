@@ -72,12 +72,58 @@ def play_with_creature(user_id: int, creature_id: int):
     Plays with the specified creature. Increases a creature's happiness and affinity with user. 
     Playing with a pet at max happiness does not earn the user any gold or affinity.
     """
-        
+    
+    played = False
+    gold_earned = 0
+    affinity_change = 0
+    happiness_change = 0
     with db.engine.begin() as connection:
-        pass
+        happiness = connection.execute(sqlalchemy.text("""SELECT happiness 
+                                                       FROM creatures 
+                                                       WHERE id = :creature"""),
+                                                       {"creature": creature_id}).mappings().fetchone()
+        
+        if happiness["happiness"] < 100:
+            happiness_change = 1
+            played = True
+            gold_earned = 2
+
+        affinity = connection.execute(sqlalchemy.text("""SELECT affinity
+                                                      FROM user_creature_connection
+                                                      WHERE user_id = :user AND creature_id = :creature"""),
+                                                      {"user": user_id, "creature": creature_id}).mappings().fetchone()
+        
+        print(f"Affinity: {affinity}")
+        
+        if affinity and happiness_change:
+            if affinity["affinity"] < 100:
+                affinity_change = 1 
+
+        connection.execute(sqlalchemy.text("""INSERT INTO user_creature_connection (user_id, creature_id, affinity)
+                                               VALUES (:user, :creature, :affinity)
+                                           ON CONFLICT(user_id, creature_id)
+                                           DO UPDATE 
+                                           SET affinity = user_creature_connection.affinity + :affinity"""),
+                           {"user": user_id, "creature": creature_id, "affinity": affinity_change})
+        
+
+        connection.execute(sqlalchemy.text("""UPDATE creatures 
+                                           SET happiness = happiness + :happiness_change 
+                                           WHERE id = :creature"""),
+                           {"happiness_change": happiness_change, "creature": creature_id})
+        
+        connection.execute(sqlalchemy.text("""UPDATE users 
+                                           SET gold = gold + :gold_earned 
+                                           WHERE id = :user"""),
+                           {"gold_earned": gold_earned, "user": user_id})
     
-    # return 
-    
+    return{
+        "play_success": played,
+        "gold_earned": gold_earned, 
+        "change_in_affinity": affinity_change, 
+        "change_in_happiness": happiness_change 
+        }
+
 @router.post("/{creature_id}/adopt")
 def adopt_creature(user_id: int, creature_id: int):
     """ 
