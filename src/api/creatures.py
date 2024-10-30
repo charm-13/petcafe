@@ -53,18 +53,100 @@ def get_creature_stats(user_id: int, creature_id: int):
     # return
     
 @router.post("/{creature_id}/feed/{treat_id}")
-def feed_creature(user_id: int, creature_id: int, treat_id: str):
+def feed_creature(user_id: int, creature_id: int, treat_sku: str):
     """
     Feeds the specified creature a treat of the specified id. Response returns the gold earned 
     and changes in stats of the creature affected by the action, which are dependent on the treat 
     used to feed the creature. If the creature has max hunger level at the time of the call, 
     the treat is not decremented from the user's inventory.
-    """
+    """    
         
-    with db.engine.begin() as connection:
-        pass
+    feed_success = False    # If the creature ate the treat (only false if hunger maxed out) 
+    gold_earned = 0         # 5 if favourite, 3 if normal, 0 if hated
+    change_in_hunger = 0    # 0 if treat is hated; else dependent on treat satiety 
+    change_in_happiness = 0 # 10 if favorite, 5 if normal, -5 if hated 
+    change_in_affinity = 0  # 5 if favorite, 2 if normal, -2 if hated 
     
-    # return 
+    with db.engine.begin() as connection:
+        stats = connection.execute(sqlalchemy.text("""SELECT happiness, hunger, fav_treat, hated_treat
+                                                   FROM creatures 
+                                                   JOIN creature_types ON creatures.type = creature_types.type                                                
+                                                   WHERE creatures.id = :creature"""),
+                                                {"creature": creature_id}).mappings().fetchone()
+        
+        affinity = connection.execute(sqlalchemy.text("""SELECT affinity
+                                                   FROM user_creature_connection                                             
+                                                   WHERE creature_id = :creature
+                                                   AND user_id = :user"""),
+                                                {"creature": creature_id, "user": user_id}).mappings().fetchone()
+        
+        inventory = connection.execute(sqlalchemy.text("""SELECT treat_sku, satiety 
+                                                       FROM users_treat_inventory
+                                                       JOIN treats ON sku = treat_sku
+                                                       WHERE treat_sku = :sku
+                                                       AND quantity > 0"""),
+                                                       {"sku": treat_sku}).mappings().fetchone()
+                
+        print(f"Creature stats: {stats}")
+        print(f"Inventory: {inventory}")
+
+        if stats["hunger"] < 100 and inventory:                    
+            feed_success = True
+            remaining_happiness = 100 - stats["happiness"]
+            remaining_hunger = 100 - stats["hunger"]
+            change_in_hunger = inventory["satiety"] if remaining_hunger >= inventory["satiety"] else remaining_hunger
+            remaining_affinity = 100
+            if affinity:
+               remaining_affinity -= affinity["affinity"]
+            
+            if treat_sku == stats["fav_treat"]:
+                gold_earned = 5
+                change_in_happiness = 10 if remaining_happiness >= 10 else remaining_happiness
+                change_in_affinity = 5 if remaining_affinity >= 5 else remaining_affinity
+
+            elif treat_sku == stats["hated_treat"]:
+                change_in_happiness = -5 if remaining_happiness <= 95 else 0
+                change_in_affinity = -2 if remaining_affinity <= 98 else 0
+                change_in_hunger = 0 
+            
+            else:
+                gold_earned = 3
+                change_in_happiness = 2 if remaining_happiness >= 2 else remaining_happiness
+                change_in_affinity = 2 if remaining_affinity >= 2 else remaining_affinity
+                
+            connection.execute(sqlalchemy.text("""INSERT INTO user_creature_connection (user_id, creature_id, affinity)
+                                                VALUES (:user, :creature, :affinity)
+                                            ON CONFLICT(user_id, creature_id)
+                                            DO UPDATE 
+                                            SET affinity = user_creature_connection.affinity + :affinity"""),
+                            {"user": user_id, "creature": creature_id, "affinity": change_in_affinity})
+                
+
+            connection.execute(sqlalchemy.text("""UPDATE creatures 
+                                            SET happiness = happiness + :happiness,
+                                               hunger = hunger + :hunger 
+                                            WHERE id = :creature"""),
+                            {"happiness": change_in_happiness, "hunger": change_in_hunger, "creature": creature_id})
+            
+            connection.execute(sqlalchemy.text("""UPDATE users 
+                                            SET gold = gold + :gold_earned 
+                                            WHERE id = :user"""),
+                            {"gold_earned": gold_earned, "user": user_id})
+            
+            connection.execute(sqlalchemy.text("""UPDATE users_treat_inventory 
+                                            SET quantity = quantity - 1
+                                            WHERE user_id = :user
+                                               AND treat_sku = :sku"""),
+                            {"user": user_id, "sku": treat_sku})
+
+            
+    return{
+        "feed_success": feed_success, 
+        "gold_earned": gold_earned,
+        "change_in_hunger": change_in_hunger, 
+        "change_in_happiness": change_in_happiness, 
+        "change_in_affinity": change_in_affinity 
+        }
     
 @router.post("/{creature_id}/play")
 def play_with_creature(user_id: int, creature_id: int):
