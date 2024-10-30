@@ -40,18 +40,38 @@ def get_creatures(user_id: int):
     
     return creatures
 
+
 @router.post("/{creature_id}/stats")
 def get_creature_stats(user_id: int, creature_id: int):
-    """ 
-    Retrieves the stats of the specified creature, including their current hunger and happiness levels, 
+    """
+    Retrieves the stats of the specified creature, including their current hunger and happiness levels,
     and their affinity with the user.
     """
-        
+
     with db.engine.begin() as connection:
-        pass
-    
-    # return
-    
+        c_stats = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT name, type, happiness, hunger,
+                       COALESCE(connections.affinity, 0) AS affinity
+                  FROM creatures LEFT JOIN user_creature_connection AS connections
+                    ON connections.creature_id = creatures.id
+                   AND connections.user_id = :u_id
+                 WHERE creatures.id = :c_id
+                """
+            ),
+            {"u_id": user_id, "c_id": creature_id}
+        ).one()
+
+    return {
+        "name": c_stats.name,
+        "type": c_stats.type,
+        "hunger": c_stats.hunger,
+        "happiness": c_stats.happiness,
+        "affinity": c_stats.affinity
+    }
+
+
 @router.post("/{creature_id}/feed/{treat_id}")
 def feed_creature(user_id: int, creature_id: int, treat_id: str):
     """
