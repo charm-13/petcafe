@@ -63,7 +63,10 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
         
             connection.execute(
                 sqlalchemy.text("""INSERT INTO carts_items (cart_id, item_sku, quantity) 
-                                VALUES (:id, :sku, :amt)"""), 
+                                VALUES (:id, :sku, :amt)
+                                ON CONFLICT (cart_id, item_sku) 
+                                DO UPDATE 
+                                SET quantity = :amt"""), 
                 {"id": cart_id, "sku": item_sku, "amt": cart_item.quantity}
             )
 
