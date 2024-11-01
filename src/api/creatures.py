@@ -41,7 +41,7 @@ def get_creatures(user_id: int):
     return creatures
 
 
-@router.post("/{creature_id}/stats")
+@router.get("/{creature_id}/stats")
 def get_creature_stats(user_id: int, creature_id: int):
     """
     Retrieves the stats of the specified creature, including their current hunger and happiness levels,
@@ -103,9 +103,9 @@ def adopt_creature(user_id: int, creature_id: int):
     """ 
     Adopts a creature. User's affinity level with the specified creature must be 100.
     """
-        
+
     with db.engine.begin() as connection:
         pass
-    
+
     # return 
     
