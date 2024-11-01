@@ -25,7 +25,7 @@ def create_cart(new_cart: User) -> dict[str, int]:
     """
     with db.engine.begin() as connection:
         id = connection.execute(
-            sqlalchemy.text("""INSERT INTO carts (user_id, time_created)
+            sqlalchemy.text("""INSERT INTO carts (user_id, created_at)
                             SELECT :user_id, CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles'
                             RETURNING id"""),
             {"user_id": new_cart.user_id}
@@ -108,17 +108,25 @@ def checkout(cart_id: int):
                 
                 purchases.append({"sku": sku, "quantity": quantity, "price per item": price})
                 
+            user_id = connection.execute(
+                sqlalchemy.text("""SELECT user_id
+                                FROM carts
+                                WHERE id = :cart_id
+                                LIMIT 1"""),
+                {"cart_id": cart_id}).mappings().fetchone()["user_id"]
+                
             connection.execute(
-                sqlalchemy.text("""WITH user AS (
-                                    SELECT user_id
-                                    FROM carts
-                                    WHERE cart_id = :cart_id
-                                    LIMIT 1
-                                )
-                                UPDATE users 
-                                SET gold = gold + :total_paid
-                                WHERE user_id = user"""),
-                {"total_paid": total_paid})
+                sqlalchemy.text("""UPDATE users 
+                                SET gold = gold - :total_paid
+                                WHERE id = :user"""),
+                {"total_paid": total_paid, "user": user_id})
+            
+            connection.execute(sqlalchemy.text("""INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
+                                                VALUES (:user, :sku, :amt)
+                                            ON CONFLICT(user_id, treat_sku)
+                                            DO UPDATE 
+                                            SET quantity = users_treat_inventory.quantity + :amt"""),
+                            {"user": user_id, "sku": sku, "amt": quantity})
                 
             print(f"""cart {cart_id} bought {purchases} \n 
                   cart {cart_id} bought {total_bought} potions and paid {total_paid} gold""") 
