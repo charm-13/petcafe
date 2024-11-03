@@ -73,8 +73,8 @@ def get_creature_stats(user_id: int, creature_id: int):
     return info
 
 
-@router.post("/{creature_id}/feed/{treat_id}")
-def feed_creature(user_id: int, creature_id: int, treat_id: str):
+@router.post("/{creature_id}/feed/{treat_sku}")
+def feed_creature(user_id: int, creature_id: int, treat_sku: str):
     """
     Feeds the specified creature a treat of the specified id. Response returns the gold earned 
     and changes in stats of the creature affected by the action, which are dependent on the treat 
