@@ -62,14 +62,15 @@ def get_creature_stats(user_id: int, creature_id: int):
             ),
             {"u_id": user_id, "c_id": creature_id}
         ).one()
-
-    return {
+    info = {
         "name": c_stats.name,
         "type": c_stats.type,
         "hunger": c_stats.hunger,
         "happiness": c_stats.happiness,
         "affinity": c_stats.affinity
     }
+    print(f"Creature info ({creature_id}) for user {user_id}:", info)
+    return info
 
 
 @router.post("/{creature_id}/feed/{treat_id}")
@@ -222,7 +223,21 @@ def adopt_creature(user_id: int, creature_id: int):
     """
 
     with db.engine.begin() as connection:
-        pass
-
-    # return 
-    
+        result = connection.execute(
+            sqlalchemy.text(
+                """
+                  UPDATE user_creature_connection
+                     SET is_adopted = true
+                   WHERE user_id = :u_id
+                     AND creature_id = :c_id
+                     AND affinity = 100
+                  RETURNING is_adopted
+                """
+            ),
+            {"u_id": user_id, "c_id": creature_id}
+        ).one_or_none()
+    if result:
+        print(f"Success. User {user_id} has adopted creature w/ id {creature_id}!")
+        return {"success": True}
+    print(f"Failure. User {user_id}'s affinity with creature id {creature_id} is not high enough for adoption.")
+    return {"success": False}
