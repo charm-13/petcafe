@@ -40,18 +40,39 @@ def get_creatures(user_id: int):
     
     return creatures
 
-@router.post("/{creature_id}/stats")
+
+@router.get("/{creature_id}/stats")
 def get_creature_stats(user_id: int, creature_id: int):
-    """ 
-    Retrieves the stats of the specified creature, including their current hunger and happiness levels, 
+    """
+    Retrieves the stats of the specified creature, including their current hunger and happiness levels,
     and their affinity with the user.
     """
-        
+
     with db.engine.begin() as connection:
-        pass
-    
-    # return
-    
+        c_stats = connection.execute(
+            sqlalchemy.text(
+                """
+                SELECT name, type, happiness, hunger,
+                       COALESCE(connections.affinity, 0) AS affinity
+                  FROM creatures LEFT JOIN user_creature_connection AS connections
+                    ON connections.creature_id = creatures.id
+                   AND connections.user_id = :u_id
+                 WHERE creatures.id = :c_id
+                """
+            ),
+            {"u_id": user_id, "c_id": creature_id}
+        ).one()
+    info = {
+        "name": c_stats.name,
+        "type": c_stats.type,
+        "hunger": c_stats.hunger,
+        "happiness": c_stats.happiness,
+        "affinity": c_stats.affinity
+    }
+    print(f"Creature info ({creature_id}) for user {user_id}:", info)
+    return info
+
+
 @router.post("/{creature_id}/feed/{treat_sku}")
 def feed_creature(user_id: int, creature_id: int, treat_sku: str):
     """
@@ -200,9 +221,23 @@ def adopt_creature(user_id: int, creature_id: int):
     """ 
     Adopts a creature. User's affinity level with the specified creature must be 100.
     """
-        
+
     with db.engine.begin() as connection:
-        pass
-    
-    # return 
-    
+        result = connection.execute(
+            sqlalchemy.text(
+                """
+                  UPDATE user_creature_connection
+                     SET is_adopted = true
+                   WHERE user_id = :u_id
+                     AND creature_id = :c_id
+                     AND affinity = 100
+                  RETURNING is_adopted
+                """
+            ),
+            {"u_id": user_id, "c_id": creature_id}
+        ).one_or_none()
+    if result:
+        print(f"Success. User {user_id} has adopted creature w/ id {creature_id}!")
+        return {"success": True}
+    print(f"Failure. User {user_id}'s affinity with creature id {creature_id} is not high enough for adoption.")
+    return {"success": False}
