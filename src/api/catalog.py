@@ -9,10 +9,11 @@ router = APIRouter()
 @router.get("/catalog/", tags=["catalog"])
 def get_catalog():
     """
-    Each unique item combination must have only a single price.
+    Provides a list of each treat, its price, and how filling it is.
+    Each item is mapped as a dictionary with keys being sku, name, 
+    price, and satiety.
     """
     with db.engine.begin() as connection:
-        pass
-    # return [
-    #     {"sku": "string", "name": "string", "quantity": 0, "price": 0, "satiety": 0}
-    # ]
+        treats = connection.execute(sqlalchemy.text("""SELECT sku, name, price, satiety FROM treats""")).mappings().fetchall()
+    
+    return treats

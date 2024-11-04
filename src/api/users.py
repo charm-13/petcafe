@@ -11,7 +11,7 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
-@router.post("/{user_id}/inventory")
+@router.get("/{user_id}/inventory")
 def get_inventory(user_id: int):
     with db.engine.begin() as connection:
         user = connection.execute(
