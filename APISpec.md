@@ -91,9 +91,10 @@ Retrieves the list of creatures available to interact with in the cafe.
 [
     {
         "name": "string",
+        "id": "integer",
         "type": "string",
         "affinity": "integer", /* Between 0 and 100 */
-        "is_aopted": "boolean"
+        "is_adopted": "boolean"
     }
 ]
 ```
