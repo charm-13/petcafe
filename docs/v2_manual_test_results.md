@@ -35,7 +35,7 @@ The user "dragonluvr5" decides that they want to buy a treat for their favorite 
     curl -X 'POST' \
       'http://127.0.0.1:3000/carts/' \
       -H 'accept: application/json' \
-      -H 'access_token: oi' \
+      -H 'access_token: token' \
       -H 'Content-Type: application/json' \
       -d '{
       "user_id": 1,
@@ -53,7 +53,7 @@ The user "dragonluvr5" decides that they want to buy a treat for their favorite 
     curl -X 'PUT' \
       'http://127.0.0.1:3000/carts/2/items/RAZZ_BERRY' \
       -H 'accept: application/json' \
-      -H 'access_token: oi' \
+      -H 'access_token: token' \
       -H 'Content-Type: application/json' \
       -d '{
       "quantity": 2
@@ -69,7 +69,7 @@ The user "dragonluvr5" decides that they want to buy a treat for their favorite 
     curl -X 'POST' \
       'http://127.0.0.1:3000/carts/2/checkout' \
       -H 'accept: application/json' \
-      -H 'access_token: oi' \
+      -H 'access_token: token' \
       -d ''
     ```
 2. ```
@@ -78,3 +78,26 @@ The user "dragonluvr5" decides that they want to buy a treat for their favorite 
         "total_gold_paid": 20
     }
     ```
+
+# Example Workflow 2
+
+The user identified by id `475` has the goal of adopting all creatures available, and strategizes by prioritizing interactions with the ones they have the lowest affinity with.
+They check their affinity levels with the available creatures and decide to interact with the creature with id `25`, who has an affinity level `20` with the user. They feed the creature `RAZZ_BERRY`s and play with it. Then, they adopt the creature because they have enough affinity with it.
+
+# Testing Results 2
+
+**First, they call `GET /users/475/creatures` to view the creatures.**
+1. ```
+    curl -X 'GET' \
+        'http://127.0.0.1:3000/users/475/creatures/' \
+        -H 'accept: application/json' \
+        -H 'access_token: token'
+    ```
+2. 
+**Call `GET /users/475/creatures/25/stats` to get the creature's current hunger and happiness levels.**
+
+**Feed the creature using a treat by calling `POST /users/475/creatures/25/feed/RAZZ_BERRY`.**
+
+**Play with the creature by calling `POST /users/475/creatures/25/play`.**
+
+**Call `POST /users/475/creatures/25/adopt` to adopt the creature.**
