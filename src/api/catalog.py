@@ -13,14 +13,5 @@ def get_catalog():
     """
     with db.engine.begin() as connection:
         treats = connection.execute(sqlalchemy.text("""SELECT * FROM treats""")).mappings().fetchall()
-
-    catalog = []
-    for treat in treats:
-        catalog.append({
-            "sku": treat["sku"],
-            "name": treat["name"],
-            "price": treat["price"],
-            "satiety": treat["satiety"]
-        })
-    
-    return catalog
+            
+    return treats
