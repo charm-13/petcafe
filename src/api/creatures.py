@@ -24,7 +24,8 @@ def get_creatures(user_id: int):
                                 FROM creatures
                                 LEFT JOIN user_creature_connection 
                                     ON creatures.id = user_creature_connection.creature_id
-                                    AND user_id = :user_id"""),
+                                    AND user_id = :user_id
+                                ORDER BY creatures.name"""),
             {"user_id": user_id}
             ).mappings()
         
