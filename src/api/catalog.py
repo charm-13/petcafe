@@ -12,7 +12,15 @@ def get_catalog():
     Each unique item combination must have only a single price.
     """
     with db.engine.begin() as connection:
-        pass
-    # return [
-    #     {"sku": "string", "name": "string", "quantity": 0, "price": 0, "satiety": 0}
-    # ]
+        treats = connection.execute(sqlalchemy.text("""SELECT * FROM treats""")).mappings().fetchall()
+
+    catalog = []
+    for treat in treats:
+        catalog.append({
+            "sku": treat["sku"],
+            "name": treat["name"],
+            "price": treat["price"],
+            "satiety": treat["satiety"]
+        })
+    
+    return catalog
