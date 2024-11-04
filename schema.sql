@@ -75,6 +75,7 @@ create table
     constraint users_pkey primary key (id),
     constraint users_username_key unique (username)
   ) tablespace pg_default;
+  INSERT INTO "public"."users" ("id", "username", "gold") VALUES ('1', 'dragonluvr5', '33')
 
 create table
   public.users_inventory (
@@ -98,6 +99,14 @@ create table
     constraint user_creature_connection_creature_id_fkey foreign key (creature_id) references creatures (id) on update cascade on delete cascade,
     constraint user_creature_connection_user_id_fkey foreign key (user_id) references users (id) on update cascade on delete cascade
   ) tablespace pg_default;
+  INSERT INTO "public"."user_creature_connection" ("user_id", "creature_id", "affinity", "is_adopted") 
+   VALUES ('1', '2', '95', 'false'), 
+          ('1', '3', '100', 'true'), 
+          ('1', '5', '1', 'false'), 
+          ('1', '15', '2', 'false'), 
+          ('1', '16', '6', 'false'), 
+          ('1', '18', '3', 'false'), 
+          ('1', '20', '2', 'false');
 
 create table
   public.carts (
