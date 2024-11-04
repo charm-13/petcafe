@@ -11,7 +11,7 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
-@router.post("/")
+@router.get("/")
 def get_creatures(user_id: int):
     """Retrieves the list of creatures available to interact with in the cafe
         as well as the affinity the requesting user has with each creature."""
