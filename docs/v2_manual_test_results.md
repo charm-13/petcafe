@@ -79,25 +79,127 @@ The user "dragonluvr5" decides that they want to buy a treat for their favorite 
     }
     ```
 
-# Example Workflow 2
+## Example Workflow 2
 
-The user identified by id `475` has the goal of adopting all creatures available, and strategizes by prioritizing interactions with the ones they have the lowest affinity with.
-They check their affinity levels with the available creatures and decide to interact with the creature with id `25`, who has an affinity level `20` with the user. They feed the creature `RAZZ_BERRY`s and play with it. Then, they adopt the creature because they have enough affinity with it.
+User "dragonluvr5" has the goal of adopting all creatures available. They check their affinity levels with the available creatures and decide to interact with the creature named Blaze, who has an id of `2` and an affinity level `95` with the user. They feed the creature two `RAZZ_BERRY`s and play with it. Then, they adopt the creature because they have enough affinity with it.
 
-# Testing Results 2
+### Testing Results 2
 
-**First, they call `GET /users/475/creatures` to view the creatures.**
+**First, they call `GET /users/1/creatures` to view the creatures.**
 1. ```
     curl -X 'GET' \
-        'http://127.0.0.1:3000/users/475/creatures/' \
+        'http://127.0.0.1:3000/users/1/creatures/' \
         -H 'accept: application/json' \
         -H 'access_token: token'
     ```
-2. 
-**Call `GET /users/475/creatures/25/stats` to get the creature's current hunger and happiness levels.**
+2. ```
+    [
+        { "name": "Aquaquel", "id": 21, "type": "water_turtle", "affinity": 0, "is_adopted": false },
+        { "name": "Blaze", "id": 2, "type": "fire_lizard", "affinity": 95, "is_adopted": false },
+        { "name": "Brawlow", "id": 14, "type": "fighter_cow", "affinity": 0, "is_adopted": false },
+        { "name": "Fayblossom", "id": 19, "type": "fluffy_fairy", "affinity": 0, "is_adopted": false },
+        { "name": "Flutterbop", "id": 8, "type": "flying_bug", "affinity": 0, "is_adopted": false },
+        { "name": "Flyka", "id": 18, "type": "flying_bug", "affinity": 3, "is_adopted": false },
+        { "name": "Grumblevine", "id": 20, "type": "grass_dragon", "affinity": 2, "is_adopted": false },
+        { "name": "Haunter Glow", "id": 15, "type": "sea_ghost", "affinity": 2, "is_adopted": false },
+        { "name": "Infernyx", "id": 12, "type": "fire_lizard", "affinity": 0, "is_adopted": false },
+        { "name": "Mindara", "id": 6, "type": "psychic_unicorn", "affinity": 0, "is_adopted": false },
+        { "name": "Mystara", "id": 16, "type": "psychic_unicorn", "affinity": 6, "is_adopted": false },
+        { "name": "Nibbly", "id": 13, "type": "silly_cat", "affinity": 0, "is_adopted": false },
+        { "name": "Puffilia", "id": 9, "type": "fluffy_fairy", "affinity": 0, "is_adopted": false },
+        { "name": "Rumbull", "id": 4, "type": "fighter_cow", "affinity": 0, "is_adopted": false },
+        { "name": "Shellwater", "id": 11, "type": "water_turtle", "affinity": 0, "is_adopted": false },
+        { "name": "Shocuff", "id": 17, "type": "electric_sheep", "affinity": 0, "is_adopted": false },
+        { "name": "Spectrip", "id": 5, "type": "sea_ghost", "affinity": 1, "is_adopted": false },
+        { "name": "Thornvyne", "id": 10, "type": "grass_dragon", "affinity": 0, "is_adopted": false },
+        { "name": "Whiskaroo", "id": 3, "type": "silly_cat", "affinity": 100, "is_adopted": true },
+        { "name": "Zap E. Wool", "id": 7, "type": "electric_sheep", "affinity": 0, "is_adopted": false }
+    ]
+    ```
+**They, they call `GET /users/1/creatures/2/stats` to get Blaze's current hunger and happiness levels.**
+1. ```
+    curl -X 'GET' \
+        'http://127.0.0.1:3000/users/1/creatures/2/stats' \
+        -H 'accept: application/json' \
+        -H 'access_token: token'
+    ```
 
-**Feed the creature using a treat by calling `POST /users/475/creatures/25/feed/RAZZ_BERRY`.**
+2. ```
+    {
+        "name": "Blaze",
+        "type": "fire_lizard",
+        "hunger": 46,
+        "happiness": 90,
+        "affinity": 95
+    }
+    ```
 
-**Play with the creature by calling `POST /users/475/creatures/25/play`.**
+**Seeing that Blaze is very hungry, they feed Blaze using two of their treats by calling `POST /users/1/creatures/2/feed/RAZZ_BERRY` twice.**
+1. ```
+    curl -X 'POST' \
+        'http://127.0.01:3000/users/1/creatures/2/feed/RAZZ_BERRY' \
+        -H 'accept: application/json' \
+        -H 'access_token: token' \
+        -d ''
+    ```
+2. ```
+    {
+        "feed_success": true,
+        "gold_earned": 3,
+        "change_in_hunger": 10,
+        "change_in_happiness": 0,
+        "change_in_affinity": 2
+    }
+    ```
 
-**Call `POST /users/475/creatures/25/adopt` to adopt the creature.**
+**They play with Blaze by calling `POST /users/1/creatures/2/play`.**
+1. ```
+    curl -X 'POST' \
+        'http://127.0.0.1:3000/users/1/creatures/2/play' \
+        -H 'accept: application/json' \
+        -H 'access_token: token' \
+        -d ''
+    ```
+
+2. ```
+    {
+        "play_success": true,
+        "gold_earned": 2,
+        "change_in_affinity": 1,
+        "change_in_happiness": 1
+    }
+    ```
+
+**They check their affinity with Blaze again by calling `GET /users/1/creatures/2/stats`.**
+1. ```
+    curl -X 'GET' \
+        'http://127.0.0.1:3000/users/1/creatures/2/stats' \
+        -H 'accept: application/json' \
+        -H 'access_token: token'
+    ```
+
+2. ```
+    {
+        "name": "Blaze",
+        "type": "fire_lizard",
+        "hunger": 66,
+        "happiness": 91,
+        "affinity": 100
+    }
+    ```
+
+**Finally, they see they have strong enough of a bond to adopt Blaze, and excitedly call `POST /users/1/creatures/2/adopt` to welcome Blaze into their home.**
+
+1. ```
+    curl -X 'POST' \
+        'http://127.0.0.1:3000/users/1/creatures/2/adopt' \
+        -H 'accept: application/json' \
+        -H 'access_token: token' \
+        -d ''
+    ```
+
+2. ```
+    {
+        "success": true
+    }
+    ```
