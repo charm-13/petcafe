@@ -40,8 +40,8 @@
     level, with the treats affecting their hunger level differently so that I won't waste any treats.<br>
    *Exception*: The user tries to buy a non-existent item.<br>
    Tell the user that the item does not exist.
-12. As someone who wants to adopt lots of pets, I want my interactions with pets to be tracked and reflected in the pet’s health and 
-    affinity level, so that I can build a meaningful connection with the pets over time.<br>
+12. As someone who wants to adopt lots of pets, I want my interactions with pets to be tracked and reflected in the pet’s happiness, hunger and 
+    affinity levels, so that I can build a meaningful connection with the pets over time.<br>
 
 *Exception*: The user enters an incorrect username or password upon logging in.<br>
 Tell the user that they got their "username or password wrong".

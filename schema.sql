@@ -45,7 +45,6 @@ create table
     name text not null,
     type text not null,
     happiness integer not null default 0,
-    health integer not null default 0,
     hunger integer not null default 100,
     constraint creatures_pkey primary key (id),
     constraint creatures_name_key unique (name),
@@ -55,17 +54,17 @@ create table
       type
     )
   ) tablespace pg_default;
-  INSERT INTO "public"."creatures" ("id", "name", "type", "happiness", "health", "hunger") 
-    VALUES ('2', 'Blaze', 'fire_lizard', '100', '100', '0'), ('3', 'Whiskaroo', 'silly_cat', '100', '100', '0'), 
-    ('4', 'Rumbull', 'fighter_cow', '100', '100', '0'), ('5', 'Spectrip', 'sea_ghost', '100', '100', '0'), 
-    ('6', 'Mindara', 'psychic_unicorn', '100', '100', '0'), ('7', 'Zap E. Wool', 'electric_sheep', '100', '100', '0'), 
-    ('8', 'Flutterbop', 'flying_bug', '100', '100', '0'), ('9', 'Puffilia', 'fluffy_fairy', '100', '100', '0'), 
-    ('10', 'Thornvyne', 'grass_dragon', '100', '100', '0'), ('11', 'Shellwater', 'water_turtle', '100', '100', '0'), 
-    ('12', 'Infernyx', 'fire_lizard', '100', '100', '0'), ('13', 'Nibbly', 'silly_cat', '100', '100', '0'), 
-    ('14', 'Brawlow', 'fighter_cow', '100', '100', '0'), ('15', 'Haunter Glow', 'sea_ghost', '100', '100', '0'), 
-    ('16', 'Mystara', 'psychic_unicorn', '100', '100', '0'), ('17', 'Shocuff', 'electric_sheep', '100', '100', '0'), 
-    ('18', 'Flyka', 'flying_bug', '100', '100', '0'), ('19', 'Fayblossom', 'fluffy_fairy', '100', '100', '0'), 
-    ('20', 'Grumblevine', 'grass_dragon', '100', '100', '0'), ('21', 'Aquaquel', 'water_turtle', '100', '100', '0');
+  INSERT INTO "public"."creatures" ("id", "name", "type", "happiness", "hunger") 
+    VALUES ('2', 'Blaze', 'fire_lizard', '100', '0'), ('3', 'Whiskaroo', 'silly_cat', '100', '0'), 
+    ('4', 'Rumbull', 'fighter_cow', '100', '0'), ('5', 'Spectrip', 'sea_ghost', '100', '0'), 
+    ('6', 'Mindara', 'psychic_unicorn', '100', '0'), ('7', 'Zap E. Wool', 'electric_sheep', '100', '0'), 
+    ('8', 'Flutterbop', 'flying_bug', '100', '0'), ('9', 'Puffilia', 'fluffy_fairy', '100', '0'), 
+    ('10', 'Thornvyne', 'grass_dragon', '100', '0'), ('11', 'Shellwater', 'water_turtle', '100', '0'), 
+    ('12', 'Infernyx', 'fire_lizard', '100', '0'), ('13', 'Nibbly', 'silly_cat', '100', '0'), 
+    ('14', 'Brawlow', 'fighter_cow', '100', '0'), ('15', 'Haunter Glow', 'sea_ghost', '100', '0'), 
+    ('16', 'Mystara', 'psychic_unicorn', '100', '0'), ('17', 'Shocuff', 'electric_sheep', '100', '0'), 
+    ('18', 'Flyka', 'flying_bug', '100', '0'), ('19', 'Fayblossom', 'fluffy_fairy', '100', '0'), 
+    ('20', 'Grumblevine', 'grass_dragon', '100', '0'), ('21', 'Aquaquel', 'water_turtle', '100', '0');
 
 create table
   public.users (
