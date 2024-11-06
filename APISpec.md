@@ -109,7 +109,7 @@ Retrieves the stats of the specified creature, including their current hunger an
 {
     "name": "string",
     "type": "string",
-    "hunger": "integer", /* Between 0 to 100 */
+    "hunger": "integer", /* 0-100, 0 being max hungry and 100 being not hungry */
     "happiness": "integer", /* Between 0 to 100 */
     "affinity": "integer" /* Between 0 to 100 */
 }
@@ -168,7 +168,7 @@ Retrieves the inventory of the user.
 ```json
 {
     "name": "string",
-    "treats": ["string", ...] /* List of treats in the users inventory */
+    "treats": ["string", ...], /* List of treats in the users inventory */
     "gold": "integer", 
     "pets": ["string", ...] /* Pets that the user has adopted */
 }
