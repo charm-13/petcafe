@@ -45,7 +45,7 @@ create table
     name text not null,
     type text not null,
     happiness integer not null default 0,
-    health integer not null default 0,
+    health integer not null default 100,
     hunger integer not null default 100,
     constraint creatures_pkey primary key (id),
     constraint creatures_name_key unique (name),
