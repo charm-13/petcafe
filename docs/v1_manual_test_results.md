@@ -8,9 +8,9 @@ the names of the pets!! They become violently upset at the situation, so they de
 **Start by calling `POST /users/create` and pass in "dragonluvr5". They're assigned id `1`:**
 1. ```
     curl -X 'POST' \ 
-        'http://127.0.0.1:3000/users/create' \
+        'http://cute-creature-cafe.onrender.com/users/create' \
         -H 'accept: application/json' \
-        -H 'access_token: token' \
+        -H 'access_token: oi1i2O9tZgaExzgC' \
         -H 'Content-Type: application/json' \
         -d '{"username": "dragonluvr5"}'
     ```
@@ -23,9 +23,9 @@ the names of the pets!! They become violently upset at the situation, so they de
 **Then they call `GET /inventory/1` to view their inventory:**
 1. ```
     curl -X 'POST' \
-        'http://127.0.0.1:3000/users/1/inventory' \
+        'http://cute-creature-cafe.onrender.com/users/1/inventory' \
         -H 'accept: application/json' \
-        -H 'access_token: token' \
+        -H 'access_token: oi1i2O9tZgaExzgC' \
         -d ''
     ```
 2. ```
@@ -40,9 +40,9 @@ the names of the pets!! They become violently upset at the situation, so they de
 **Then call `GET /creatures/1` to view the list of available creatures and their current affinity with them:**
 1. ```
     curl -X 'POST' \
-        'http://127.0.0.1:3000/users/1/creatures/' \
+        'http://cute-creature-cafe.onrender.com/users/1/creatures/' \
         -H 'accept: application/json' \
-        -H 'access_token: token' \
+        -H 'access_token: oi1i2O9tZgaExzgC' \
         -d ''
     ```
 2. ```
@@ -72,8 +72,8 @@ the names of the pets!! They become violently upset at the situation, so they de
 Finally, they call `DELETE /users/1/delete` to delete their account:
 1. ```
     curl -X 'DELETE' \
-        'http://127.0.0.1:3000/users/1/delete' \
+        'http://cute-creature-cafe.onrender.com/users/1/delete' \
         -H 'accept: application/json' \
-        -H 'access_token: token'
+        -H 'access_token: oi1i2O9tZgaExzgC'
     ```
 2. ```"OK"```
