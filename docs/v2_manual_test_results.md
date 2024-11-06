@@ -6,7 +6,7 @@ The user "dragonluvr5" decides that they want to buy a treat for their favorite 
 **Check the catalog by calling ```GET /catalog```:**
 1. ```
    curl -X 'GET' \
-    'http://127.0.0.1:3000/catalog/' \
+    'http://cute-creature-cafe.onrender.com/catalog/' \
     -H 'accept: application/json'
     ```
 2. ```
@@ -33,9 +33,9 @@ The user "dragonluvr5" decides that they want to buy a treat for their favorite 
 **Create a cart by calling ```POST /carts``` to get a cart with id `2`:**
 1. ```
     curl -X 'POST' \
-      'http://127.0.0.1:3000/carts/' \
+      'http://cute-creature-cafe.onrender.com/carts/' \
       -H 'accept: application/json' \
-      -H 'access_token: token' \
+      -H 'access_token: oi1i2O9tZgaExzgC' \
       -H 'Content-Type: application/json' \
       -d '{
       "user_id": 1,
@@ -51,9 +51,9 @@ The user "dragonluvr5" decides that they want to buy a treat for their favorite 
 **Then they call ```POST /carts/2/items/RAZZ_BERRY``` and pass in a quantity of 2:**
 1. ```
     curl -X 'PUT' \
-      'http://127.0.0.1:3000/carts/2/items/RAZZ_BERRY' \
+      'http://cute-creature-cafe.onrender.com/carts/2/items/RAZZ_BERRY' \
       -H 'accept: application/json' \
-      -H 'access_token: token' \
+      -H 'access_token: oi1i2O9tZgaExzgC' \
       -H 'Content-Type: application/json' \
       -d '{
       "quantity": 2
@@ -67,9 +67,9 @@ The user "dragonluvr5" decides that they want to buy a treat for their favorite 
 **Then they checkout by calling ```POST /carts/2/checkout``` and jump with glee as the treats enter their inventory.**
 1. ```
     curl -X 'POST' \
-      'http://127.0.0.1:3000/carts/2/checkout' \
+      'http://cute-creature-cafe.onrender.com/carts/2/checkout' \
       -H 'accept: application/json' \
-      -H 'access_token: token' \
+      -H 'access_token: oi1i2O9tZgaExzgC' \
       -d ''
     ```
 2. ```
@@ -88,9 +88,9 @@ User "dragonluvr5" has the goal of adopting all creatures available. They check 
 **First, they call `GET /users/1/creatures` to view the creatures.**
 1. ```
     curl -X 'GET' \
-        'http://127.0.0.1:3000/users/1/creatures/' \
+        'http://cute-creature-cafe.onrender.com/users/1/creatures/' \
         -H 'accept: application/json' \
-        -H 'access_token: token'
+        -H 'access_token: oi1i2O9tZgaExzgC'
     ```
 2. ```
     [
@@ -119,9 +119,9 @@ User "dragonluvr5" has the goal of adopting all creatures available. They check 
 **They, they call `GET /users/1/creatures/2/stats` to get Blaze's current hunger and happiness levels.**
 1. ```
     curl -X 'GET' \
-        'http://127.0.0.1:3000/users/1/creatures/2/stats' \
+        'http://cute-creature-cafe.onrender.com/users/1/creatures/2/stats' \
         -H 'accept: application/json' \
-        -H 'access_token: token'
+        -H 'access_token: oi1i2O9tZgaExzgC'
     ```
 
 2. ```
@@ -139,7 +139,7 @@ User "dragonluvr5" has the goal of adopting all creatures available. They check 
     curl -X 'POST' \
         'http://127.0.01:3000/users/1/creatures/2/feed/RAZZ_BERRY' \
         -H 'accept: application/json' \
-        -H 'access_token: token' \
+        -H 'access_token: oi1i2O9tZgaExzgC' \
         -d ''
     ```
 2. ```
@@ -155,9 +155,9 @@ User "dragonluvr5" has the goal of adopting all creatures available. They check 
 **They play with Blaze by calling `POST /users/1/creatures/2/play`.**
 1. ```
     curl -X 'POST' \
-        'http://127.0.0.1:3000/users/1/creatures/2/play' \
+        'http://cute-creature-cafe.onrender.com/users/1/creatures/2/play' \
         -H 'accept: application/json' \
-        -H 'access_token: token' \
+        -H 'access_token: oi1i2O9tZgaExzgC' \
         -d ''
     ```
 
@@ -173,9 +173,9 @@ User "dragonluvr5" has the goal of adopting all creatures available. They check 
 **They check their affinity with Blaze again by calling `GET /users/1/creatures/2/stats`.**
 1. ```
     curl -X 'GET' \
-        'http://127.0.0.1:3000/users/1/creatures/2/stats' \
+        'http://cute-creature-cafe.onrender.com/users/1/creatures/2/stats' \
         -H 'accept: application/json' \
-        -H 'access_token: token'
+        -H 'access_token: oi1i2O9tZgaExzgC'
     ```
 
 2. ```
@@ -192,9 +192,9 @@ User "dragonluvr5" has the goal of adopting all creatures available. They check 
 
 1. ```
     curl -X 'POST' \
-        'http://127.0.0.1:3000/users/1/creatures/2/adopt' \
+        'http://cute-creature-cafe.onrender.com/users/1/creatures/2/adopt' \
         -H 'accept: application/json' \
-        -H 'access_token: token' \
+        -H 'access_token: oi1i2O9tZgaExzgC' \
         -d ''
     ```
 
