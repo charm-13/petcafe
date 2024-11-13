@@ -91,9 +91,10 @@ Retrieves the list of creatures available to interact with in the cafe.
 [
     {
         "name": "string",
+        "id": "integer",
         "type": "string",
         "affinity": "integer", /* Between 0 and 100 */
-        "is_aopted": "boolean"
+        "is_adopted": "boolean"
     }
 ]
 ```
@@ -108,7 +109,7 @@ Retrieves the stats of the specified creature, including their current hunger an
 {
     "name": "string",
     "type": "string",
-    "hunger": "integer", /* Between 0 to 100 */
+    "hunger": "integer", /* 0-100, 0 being max hungry and 100 being not hungry */
     "happiness": "integer", /* Between 0 to 100 */
     "affinity": "integer" /* Between 0 to 100 */
 }

@@ -15,7 +15,7 @@ The user identified by id `475` has the goal of adopting all creatures available
 They check their affinity levels with the available creatures and decide to interact with the creature with id `25`, who has an affinity level `20` with the user. They feed the creature `RAZZ_BERRY`s and play with it. Then, they adopt the creature because they have enough affinity with it.
 To satisfy the needs of the creature they do the following.
 
-1. Call `POST /users/475/creatures` to view the creatures
+1. Call `GET /users/475/creatures` to view the creatures
 2. Call `GET /users/475/creatures/25/stats` to get the creature's current hunger and happiness levels.
 3. Feed the creature using a treat by calling `POST /users/475/creatures/25/feed/RAZZ_BERRY`.
 4. Play with the creature by calling `POST /users/475/creatures/25/play`.

@@ -18,13 +18,14 @@ def get_creatures(user_id: int):
         
     with db.engine.begin() as connection:
         result = connection.execute(
-            sqlalchemy.text("""SELECT creatures.name, creatures.type, 
+            sqlalchemy.text("""SELECT creatures.name, creatures.type, creatures.id,
                                     COALESCE(user_creature_connection.is_adopted, false) AS status,
                                     COALESCE(user_creature_connection.affinity, 0) AS affinity
                                 FROM creatures
                                 LEFT JOIN user_creature_connection 
                                     ON creatures.id = user_creature_connection.creature_id
-                                    AND user_id = :user_id"""),
+                                    AND user_id = :user_id
+                                ORDER BY creatures.name"""),
             {"user_id": user_id}
             ).mappings()
         
@@ -33,6 +34,7 @@ def get_creatures(user_id: int):
     for creature in result:
         creatures.append({
             "name": creature["name"],
+            "id": creature["id"],
             "type": creature["type"],
             "affinity": creature["affinity"],
             "is_adopted": creature["status"]
