@@ -223,7 +223,6 @@ def adopt_creature(user_id: int, creature_id: int):
     """ 
     Adopts a creature. User's affinity level with the specified creature must be 100.
     """
-
     with db.engine.begin() as connection:
         result = connection.execute(
             sqlalchemy.text(
@@ -243,3 +242,40 @@ def adopt_creature(user_id: int, creature_id: int):
         return {"success": True}
     print(f"Failure. User {user_id}'s affinity with creature id {creature_id} is not high enough for adoption.")
     return {"success": False}
+
+@router.post("/{creature_id}/evolve")
+def evolve_creature(user_id: int, creature_id: int):
+    """ 
+    Evolves a creature to the next stage.
+    """
+    try:
+        with db.engine.begin() as connection:
+            status = connection.execute(sqlalchemy.text("""
+                SELECT stage, COALESCE(user_creature_connection.is_adopted, false) AS is_adopted
+                FROM creatures
+                LEFT JOIN user_creature_connection ON user_id = :u_id
+                WHERE creatures.id = :c_id
+            """), 
+            {"u_id": user_id, "c_id": creature_id}).mappings().fetchone()
+            
+            if status == None:
+                return {"success": False, "error": f"Creature {creature_id} does not exist."}
+            
+            if not status["is_adopted"]:
+                return {"success": False, "error": f"Creature {creature_id} must already be adopted before evolving."}
+            
+            if status["stage"] == 3:
+                return {"success": False, "error": f"Creature {creature_id} is already at the highest stage."}
+            
+            connection.execute(sqlalchemy.text("""
+                UPDATE creatures
+                SET stage = stage + 1 
+                WHERE id = :c_id AND stage <= 3
+            """),
+            {"c_id": creature_id})
+            
+        return {"success": True}
+                
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return {"success": False, "error": str(e)}
