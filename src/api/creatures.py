@@ -270,7 +270,7 @@ def breed_creatures(user_id: int, new: NewCreature):
                                     {"uid": user_id, "cid1": new.creature_id_1, "cid2": new.creature_id_2}).mappings().fetchall()
 
             if not result or len(result) != 2:
-                return {"success": False, "error": f"Creature(s) are not adopted or do not exist"}
+                return {"success": False, "error": "One or both creatures are not adopted or do not exist"}
             
             # determine new type     
             type1 = result[0]["type"].split('_')
@@ -295,12 +295,10 @@ def breed_creatures(user_id: int, new: NewCreature):
                                                     ON CONFLICT (name)
                                                     DO NOTHING
                                                     RETURNING id"""),
-                                            {"name": new.name, "type": new_type}).mappings().fetchone()
+                                            {"name": new.name, "type": new_type}).scalar_one_or_none()
             
             if not id: 
-                return {"success": False, "error": f"Name already exists"}
-            
-            id = id["id"]
+                return {"success": False, "error": "Name already exists"}
 
             connection.execute(sqlalchemy.text("""INSERT INTO creature_types(type, fav_treat, hated_treat)
                                             VALUES (:new_type, :fav, :hated)

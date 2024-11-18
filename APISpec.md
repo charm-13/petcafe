@@ -158,7 +158,7 @@ Adopts a creature. User's affinity level with the specified creature must be 100
 ```
 ### 2.4 Breed Creatures `/users/{user_id}/creatures/breed` (POST)
 
-Breeds 2 creatures together. Creatures must be adopted by the user.
+Breeds 2 creatures together. Creatures must be adopted by the user. Name corresponds to the name for the new creature.
 
 **Request:**
 
@@ -175,6 +175,7 @@ Breeds 2 creatures together. Creatures must be adopted by the user.
 ```json
 {
     "name": "string",
+    "id": "integer",
     "type": "string",
     "fav_treat": "string",
     "hated_treat": "string"
