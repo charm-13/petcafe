@@ -251,12 +251,16 @@ def evolve_creature(user_id: int, creature_id: int):
     try:
         with db.engine.begin() as connection:
             status = connection.execute(sqlalchemy.text("""
-                SELECT stage, COALESCE(user_creature_connection.is_adopted, false) AS is_adopted
+                SELECT user_id, creature_id, stage, COALESCE(user_creature_connection.is_adopted, false) AS is_adopted
                 FROM creatures
-                LEFT JOIN user_creature_connection ON user_id = :u_id
+                LEFT JOIN user_creature_connection 
+                    ON creature_id = creatures.id 
+                    AND user_id = :u_id
                 WHERE creatures.id = :c_id
             """), 
             {"u_id": user_id, "c_id": creature_id}).mappings().fetchone()
+            
+            print(f"{status}")
             
             if status == None:
                 return {"success": False, "error": f"Creature {creature_id} does not exist."}
