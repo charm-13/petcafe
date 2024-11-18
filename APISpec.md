@@ -156,7 +156,7 @@ Adopts a creature. User's affinity level with the specified creature must be 100
     "success": "boolean"
 }
 ```
-### 2.4 Breed Creatures `/users/{user_id}/creatures/{creature_id}/adopt` (POST)
+### 2.4 Breed Creatures `/users/{user_id}/creatures/breed` (POST)
 
 Breeds 2 creatures together. Creatures must be adopted by the user.
 
