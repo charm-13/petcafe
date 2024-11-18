@@ -251,11 +251,13 @@ def evolve_creature(user_id: int, creature_id: int):
     try:
         with db.engine.begin() as connection:
             status = connection.execute(sqlalchemy.text("""
-                SELECT user_id, creature_id, stage, COALESCE(user_creature_connection.is_adopted, false) AS is_adopted
+                SELECT 
+                    creatures.stage, hunger, happiness, max_hunger, max_happiness,
+                    COALESCE(user_creature_connection.is_adopted, false) AS is_adopted
                 FROM creatures
-                LEFT JOIN user_creature_connection 
-                    ON creature_id = creatures.id 
+                LEFT JOIN user_creature_connection ON creature_id = creatures.id 
                     AND user_id = :u_id
+                JOIN evolution_stages ON creatures.stage = evolution_stages.stage
                 WHERE creatures.id = :c_id
             """), 
             {"u_id": user_id, "c_id": creature_id}).mappings().fetchone()
@@ -270,6 +272,9 @@ def evolve_creature(user_id: int, creature_id: int):
             
             if status["stage"] == 3:
                 return {"success": False, "error": f"Creature {creature_id} is already at the highest stage."}
+            
+            if status["hunger"] < status["max_hunger"] or status["happiness"] < status["max_happiness"]:
+                return {"success": False, "error": f"The creature must have maximum stats before evolving."}
             
             connection.execute(sqlalchemy.text("""
                 UPDATE creatures
