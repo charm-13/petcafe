@@ -94,7 +94,8 @@ Retrieves the list of creatures available to interact with in the cafe.
         "id": "integer",
         "type": "string",
         "affinity": "integer", /* Between 0 and 100 */
-        "is_adopted": "boolean"
+        "is_adopted": "boolean",
+        "stage": "integer" /* 1, 2, or 3 */
     }
 ]
 ```
@@ -111,7 +112,8 @@ Retrieves the stats of the specified creature, including their current hunger an
     "type": "string",
     "hunger": "integer", /* 0-100, 0 being max hungry and 100 being not hungry */
     "happiness": "integer", /* Between 0 to 100 */
-    "affinity": "integer" /* Between 0 to 100 */
+    "affinity": "integer", /* Between 0 to 100 */
+    "stage": "integer" /* 1, 2, or 3 */
 }
 ```
 
@@ -148,6 +150,18 @@ Plays with the specified creature. Increases a creature's happiness and affinity
 ### 2.3 Adopt Creature `/users/{user_id}/creatures/{creature_id}/adopt` (POST)
 
 Adopts a creature. User's affinity level with the specified creature must be 100.
+
+**Response:**
+
+```json
+{
+    "success": "boolean"
+}
+```
+
+### 2.5 Evolve Creatures `/users/{user_id}/creatures/{creature_id}/evolve` (POST)
+
+Each creature can be 1 of 3 stages. This evolves a creature to the next stage. 
 
 **Response:**
 
