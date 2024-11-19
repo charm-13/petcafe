@@ -74,7 +74,6 @@ def get_creature_stats(user_id: int, creature_id: int):
     print(f"Creature info ({creature_id}) for user {user_id}:", info)
     return info
 
-
 @router.post("/{creature_id}/feed/{treat_sku}")
 def feed_creature(user_id: int, creature_id: int, treat_sku: str):
     """
@@ -243,3 +242,82 @@ def adopt_creature(user_id: int, creature_id: int):
         return {"success": True}
     print(f"Failure. User {user_id}'s affinity with creature id {creature_id} is not high enough for adoption.")
     return {"success": False}
+
+class NewCreature(BaseModel):
+    creature_id_1: int
+    creature_id_2: int
+    name: str
+
+@router.post("/breed")
+def breed_creatures(user_id: int, new: NewCreature):
+    """ 
+    Breeds 2 creatures together. Creatures must be adopted by the user.
+    """
+
+    try: 
+        with db.engine.begin() as connection:
+            result = connection.execute(
+                sqlalchemy.text("""SELECT creatures.type, fav_treat, hated_treat
+                                    FROM creatures 
+                                    JOIN user_creature_connection 
+                                    ON creatures.id = creature_id 
+                                    JOIN creature_types 
+                                    ON creatures.type = creature_types.type
+                                    WHERE user_id = :uid 
+                                    AND (creatures.id = :cid1
+                                    OR creatures.id = :cid2)
+                                    AND is_adopted = TRUE"""),
+                                    {"uid": user_id, "cid1": new.creature_id_1, "cid2": new.creature_id_2}).mappings().fetchall()
+
+            if not result or len(result) != 2:
+                return {"success": False, "error": "One or both creatures are not adopted or do not exist"}
+            
+            # determine new type     
+            type1 = result[0]["type"].split('_')
+            type2 = result[1]["type"].split('_')
+            new_type = type1[0] + "_" + type2[1]
+
+            # determine treat preferences
+            fav_treat1 = result[0]["fav_treat"]
+            fav_treat2 = result[1]["fav_treat"]
+            hated_treat1 = result[0]["hated_treat"]
+            hated_treat2 = result[1]["hated_treat"]
+            
+            if fav_treat1 != hated_treat2:
+                fav, hated = fav_treat1, hated_treat2
+            elif fav_treat2 != hated_treat1:
+                fav, hated = fav_treat2, hated_treat1
+            else:
+                fav, hated = fav_treat1, hated_treat1
+
+            id = connection.execute(sqlalchemy.text("""INSERT INTO creatures(name, type)
+                                                    VALUES (:name, :type) 
+                                                    ON CONFLICT (name)
+                                                    DO NOTHING
+                                                    RETURNING id"""),
+                                            {"name": new.name, "type": new_type}).scalar_one_or_none()
+            
+            if not id: 
+                return {"success": False, "error": "Name already exists"}
+
+            connection.execute(sqlalchemy.text("""INSERT INTO creature_types(type, fav_treat, hated_treat)
+                                            VALUES (:new_type, :fav, :hated)
+                                            ON CONFLICT (type)
+                                            DO NOTHING"""),
+                                            {"new_type": new_type, "fav": fav, "hated": hated})
+
+            connection.execute(sqlalchemy.text("""INSERT INTO user_creature_connection(user_id, creature_id, affinity, is_adopted)
+                                            VALUES (:uid, :cid, 100, True)"""),
+                                            {"uid": user_id, "cid": id})
+       
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return {"error": str(e)}
+
+    return {
+        "name": new.name,
+        "id": id,
+        "type": new_type,
+        "fav_treat": fav,
+        "hated_treat": hated
+    }
