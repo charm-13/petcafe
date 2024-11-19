@@ -167,7 +167,7 @@ Each creature can be 1 of 3 stages. This evolves a creature to the next stage.
 
 ```json
 {
-    "success": "boolean"
+    "stage": "integer" /* 1, 2, or 3 */
 }
 ```
 

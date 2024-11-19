@@ -313,9 +313,7 @@ def evolve_creature(user_id: int, creature_id: int):
             """), 
             {"u_id": user_id, "c_id": creature_id}).mappings().fetchone()
             
-            print(f"{status}")
-            
-            if status == None:
+            if not status:
                 return {"success": False, "error": f"Creature {creature_id} does not exist."}
             
             if not status["is_adopted"]:
@@ -325,16 +323,20 @@ def evolve_creature(user_id: int, creature_id: int):
                 return {"success": False, "error": f"Creature {creature_id} is already at the highest stage."}
             
             if status["hunger"] < status["max_hunger"] or status["happiness"] < status["max_happiness"]:
-                return {"success": False, "error": f"The creature must have maximum stats before evolving."}
+                return {"success": False, "error": f"Creature {creature_id} must have maximum stats before evolving."}
             
-            connection.execute(sqlalchemy.text("""
+            stage = connection.execute(sqlalchemy.text("""
                 UPDATE creatures
                 SET stage = stage + 1 
-                WHERE id = :c_id AND stage <= 3
+                WHERE id = :c_id
+                RETURNING stage
             """),
-            {"c_id": creature_id})
+            {"c_id": creature_id}).mappings().fetchone()
             
-        return {"success": True}
+            if not stage:
+                return {"success": False, "error": f"Unable to evolve creature {creature_id}"}
+            
+        return stage
                 
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
