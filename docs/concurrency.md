@@ -49,3 +49,6 @@ Whiskaroo's hunger is now `508`.
 Both calls read the same value for Whiskaroo's hunger, so both updates would add the `RAZZ_BERRY` satiety such that Whiskaroo's hunger after both calls (`488 + 10 + 10 = 508`) would be greater than its max_hunger (`500`).
 
 ![Sequence diagram for case 3](case3_concurrency.png)
+
+### Prevention
+This could be solved in a similar way to case 1 & 2. PostgreSQL's isolation level could be set to `REPEATABLE READ`, preventing User E from changing Whiskaroo's hunger until after User F's transaction has finished.
