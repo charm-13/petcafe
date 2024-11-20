@@ -20,8 +20,8 @@ Since a creature's stage of evolution determines their max happiness and hunger 
 ### Prevention
 This could be solved in multiple ways.
 - On a database level, PostgreSQL's isolation level could be set to `REPEATABLE READ`. In this example, this would mean that User A's call would acquire a row-level read lock on Blaze's stats in the creatures table during the transaction, preventing User B's call from reading or modifying Blaze's stats until User A's transaction has finished.
-- An additional check could be performed by putting `WHERE stage < 3` in the `UPDATE` statement in the endpoint.
-- A constraint `stage < 3` could be applied to the `stage` attribute itself in the table definition.
+- An additional check could be performed by putting `WHERE stage < 3` in the `UPDATE` statement in the endpoint. This would prevent the row from being updated if it was already maxed out.
+  - More reasonably, a constraint `stage < 3` could be applied to the `stage` attribute itself in the table definition.
 
 ## Case 2: Non-Repeatable Read - Play = Unhappiness
 This case can occur when two interactions are initiated with the same creature concurrently. Since the feed and play endpoints both modify a creature's happiness, it is possible to reach a state where a user sees a happiness level in the response that is inconsistent with the expected behavior from their input.
