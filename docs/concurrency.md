@@ -35,9 +35,17 @@ From the perspective of User C's transaction, Spectrip's happiness level has bee
 ### Prevention
 This could be solved in a similar way to case 1. PostgreSQL's isolation level could be set to `REPEATABLE READ`, preventing User D from changing Spectrip's happiness until after User C's transaction has finished. User C would not see an unexpected result.
 
-## Case 3: Non-Repeatable Read - Feed
-This case can occur when two users try to feed the same creature concurrently, but the sum of the satiety of both treats is greater than the creature's remaining hunger. This causes the creature's hunger to be greater than its max_hunger.
+## Case 3: Write Skew - Feed
+This case can occur when two users try to feed the same creature concurrently, but the sum of the satiety of both treats is greater than the creature's remaining hunger. This causes the creature's hunger to be greater than its max_hunger (invalid).
 
-Suppose User E (id `9`) tries to feed Whiskaroo (id `3`) at the same time as User F (id `10`). First, User F calls `POST /users/10/creatures/3/feed/RAZZ_BERRY`, which begins the transaction. While the endpoint is calculating remaining hunger, which happens to be less than the satiety of two RAZZ_BERRYs, user E calls `POST /users/10/creatures/3/feed/RAZZ_BERRY`. Similar to the previous case, user F's call completes after user E's gets the creature's current stats. 
-Both calls would read the same value for Whiskaroo's hunger, so both updates would add the RAZZ_BERRY satiety such that Whiskaroo's hunger after both calls would be greater than its max_hunger.
+Suppose User E (id `9`) tries to feed Whiskaroo (id `3`) at the same time as User F (id `10`). Whiskaroo has initial hunger and max hunger of `488` and `500` respectively.
 
+First, User F calls `POST /users/10/creatures/3/feed/RAZZ_BERRY`, which begins the transaction. The feed endpoint calculates and retrieves Whiskaroo's remaining hunger `12`. Since the satiety of a `RAZZ_BERRY` is `10`, the endpoint calculates the change in hunger for Whiskaroo to be `+10`.
+
+Meanwhile, User E calls `POST /users/9/creatures/3/feed/RAZZ_BERRY`. Similar to the previous case, user F's call completes and updates Whiskaroo's hunger after User E's gets the creature's current stats. Despite Whiskaroo's remaining hunger now being `2`, User E's call still sees it as `12`. Thus, it will calculate the change in hunger for Whiskaroo to be `+10` as well.
+
+Whiskaroo's hunger is now `508`.
+
+Both calls read the same value for Whiskaroo's hunger, so both updates would add the `RAZZ_BERRY` satiety such that Whiskaroo's hunger after both calls (`488 + 10 + 10 = 508`) would be greater than its max_hunger (`500`).
+
+![Sequence diagram for case 3](case3_concurrency.png)
