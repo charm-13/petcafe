@@ -158,7 +158,31 @@ Adopts a creature. User's affinity level with the specified creature must be 100
     "success": "boolean"
 }
 ```
+### 2.4 Breed Creatures `/users/{user_id}/creatures/breed` (POST)
 
+Breeds 2 creatures together. Creatures must be adopted by the user. Name corresponds to the name for the new creature.
+
+**Request:**
+
+```json
+{
+    "creature_id_1": "integer",
+    "creature_id_2": "integer",
+    "name": "string"
+}
+```
+
+**Response:**
+
+```json
+{
+    "name": "string",
+    "id": "integer",
+    "type": "string",
+    "fav_treat": "string",
+    "hated_treat": "string"
+}
+```
 ### 2.5 Evolve Creatures `/users/{user_id}/creatures/{creature_id}/evolve` (POST)
 
 Each creature can be 1 of 3 stages. This evolves a creature to the next stage. 
