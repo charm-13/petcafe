@@ -5,9 +5,9 @@ This would be the case where multiple different users evolve the same creature a
 
 For example, User A (id `1`), who has adopted the creature named `Blaze` of ID `2`, decides they want to evolve Blaze, who is currently at stage 2, to stage 3.
 
-They call the `/users/1/creatures/2/evolve` endpoint, which begins a transaction that selects Blaze's current stage (`2`), and does several checks to make sure that Blaze meets the requirements for evolution, including that User A has adopted Blaze, Blaze has max hunger and happiness, and Blaze's current stage is less than 3.
+They call the `POST /users/1/creatures/2/evolve` endpoint, which begins a transaction that selects Blaze's current stage (`2`), and does several checks to make sure that Blaze meets the requirements for evolution, including that User A has adopted Blaze, Blaze has max hunger and happiness, and Blaze's current stage is less than 3.
 
-In the middle of the those checks, another person, User B (id `2`), who has also adopted Blaze, also decides to evolve the creature. User B calls `/users/2/creatures/2/evolve`, which begins a second transaction that selects Blaze's current stage (`2`), and does those same checks.
+In the middle of the those checks, another person, User B (id `2`), who has also adopted Blaze, also decides to evolve the creature. User B calls `POST /users/2/creatures/2/evolve`, which begins a second transaction that selects Blaze's current stage (`2`), and does those same checks.
 
 Meanwhile, the first transaction (for User A) finishes its checks and does an `UPDATE` to increment Blaze's stage to `3`. Blaze is now considered to be at max stage of evolution.
 
@@ -22,4 +22,16 @@ This could be solved in multiple ways.
 - On a database level, PostgreSQL's isolation level could be set to `REPEATABLE READ`. In this example, this would mean that User A's call would acquire a row-level read lock on Blaze's stats in the creatures table during the transaction, preventing User B's call from reading or modifying Blaze's stats until User A's transaction has finished.
 - An additional check could be performed by putting `WHERE stage < 3` in the `UPDATE` statement in the endpoint.
 - A constraint `stage < 3` could be applied to the `stage` attribute itself in the table definition.
+
+## Case 2: Non-Repeatable Read - Play = Unhappiness
+This case can occur when two interactions are initiated with the same creature concurrently. Since the feed and play endpoints both modify a creature's happiness, it is possible to reach a state where a user sees a happiness level in the response that is inconsistent with the expected behavior from their input.
+
+For example, the creature named `Spectrip` (id  `5`) has happiness level `99` and max happiness `100`. User C (id `3`) decides to play with Spectrip by calling `POST /users/3/creatures/5/play`, which performs a `SELECT` query to get Spectrip's happiness and max happiness levels. At the same time, User D (id `4`) feeds Spectrip a treat by calling `POST /users/4/creatures/5/feed/CRUMBLY_COOKIE`. Unfortunately, `CRUMBLY_COOKIE`s happen to be Spectrip's least favorite treat, so Spectrip's happiness level is updated to be decremented by `5`, bringing it down to `94`.
+
+From the perspective of User C's transaction, Spectrip's happiness level has been read to be `99`. Since this is less than the maximum happiness level, User C expects Spectrip's final happiness to be `99 + 1 = 100`. Instead, when User C's `UPDATE` query runs to increment Spectrip's happiness, it returns a value of `94 + 1 = 95`. User C is understandably confused. From their perspective, playing with Spectrip caused it to become sadder.
+
+![Sequence diagram for case 2](case2_concurrency.png)
+
+### Prevention
+This could be solved in a similar way to case 1. PostgreSQL's isolation level could be set to `REPEATABLE READ`, preventing User D from changing Spectrip's happiness until after User C's transaction has finished. User C would not see an unexpected result.
 
