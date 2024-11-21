@@ -159,22 +159,7 @@ Adopts a creature. User's affinity level with the specified creature must be 100
 
 ## 3. User Functions
 
-### 3.1. Get User Inventory `/users/{user_id}/inventory` (GET)
-
-Retrieves the inventory of the user.
-
-**Response**:
-
-```json
-{
-    "name": "string",
-    "treats": ["string", ...], /* List of treats in the users inventory */
-    "gold": "integer", 
-    "pets": ["string", ...] /* Pets that the user has adopted */
-}
-```
-
-### 3.2. Create User  `/users/create` (POST)
+### 3.1. Create User  `/users/create` (POST)
 
 Creates a new user with the specified username.
 
@@ -194,7 +179,7 @@ Creates a new user with the specified username.
 }
 ```
 
-### 3.3. Delete User  `/users/{user_id}/delete` (DELETE)
+### 3.2. Delete User  `/users/{user_id}/delete` (DELETE)
 
 Deletes user profile.
 
@@ -204,4 +189,38 @@ Deletes user profile.
 {
     "success": "boolean"
 }
+```
+
+### 3.3. Get User Inventory `/users/{user_id}/inventory` (GET)
+
+Retrieves the gold and treat inventory of the user.
+
+**Response**:
+
+```json
+{
+    "username": "string",
+    "gold": "integer", 
+    "treats": [ /* List of treats in the users inventory */
+            {
+            "sku": "string",
+            "quantity": "integer"
+            }, 
+        ] 
+}
+```
+
+### 3.4. Get User Inventory `/users/{user_id}/adoptions` (GET)
+
+Retrieves the name and stage for each creature the user has adopted.
+
+**Response**:
+
+```json
+[
+    {
+    "name": "string",
+    "stage": "integer" /* 1, 2, or 3 */
+    },
+]
 ```

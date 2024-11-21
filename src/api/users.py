@@ -11,70 +11,43 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
-@router.get("/{user_id}/inventory")
-def get_inventory(user_id: int):
-    with db.engine.begin() as connection:
-        user = connection.execute(
-            sqlalchemy.text("""SELECT username, gold
-                                FROM users
-                                WHERE users.id = :id"""),
-                                {"id": user_id}).mappings().fetchone()
-        treats = connection.execute(
-            sqlalchemy.text("""SELECT treat_sku 
-                                FROM users_treat_inventory
-                                WHERE user_id = :id"""),
-                                {"id": user_id}).mappings().fetchall()
-        pets = connection.execute(
-            sqlalchemy.text("""SELECT name 
-                                FROM user_creature_connection
-                                LEFT JOIN creatures ON user_creature_connection.creature_id = creatures.id
-                                WHERE user_id = :id
-                                AND user_creature_connection.is_adopted = True"""),
-                                {"id": user_id}).mappings().fetchall()
-        
-
-    treat_list = []
-    pet_list = []
-    for treat in treats:
-        treat_list.append(treat["treat_sku"])
-    for pet in pets:
-        pet_list.append(pet["name"])
-
-    print(f"Treats: {treat_list}, Pets: {pet_list}, User: {user}")
-
-    return {
-        "name": user["username"],
-        "treats": treat_list,
-        "gold": user["gold"], 
-        "pets": pet_list
-    }
-
-
 class NewUser(BaseModel):
     username: str
 
-
 @router.post("/create")
 def create_user(user: NewUser):
-    with db.engine.begin() as connection:
-        id = connection.execute(
-            sqlalchemy.text(
-                """
-                INSERT INTO users (username)
-                           VALUES (:username)
-                ON CONFLICT (username)
-                  DO UPDATE
-                        SET username = excluded.username
-                RETURNING id
-                """
-            ),
-            {"username": user.username},
-        ).one().id
-    return {"user_id": id}
-
+    """
+    Creates a new user with the given username. Returns the new user's id.
+    """
+    try:
+        if len(user.username) < 5 or len(user.username) > 20:
+            return {"success": False, "error": "Username must be between 5 and 20 characters."}
+        
+        with db.engine.begin() as connection:
+            id = connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO users (username)
+                            VALUES (:username)
+                    ON CONFLICT (username)
+                    DO UPDATE
+                            SET username = excluded.username
+                    RETURNING id
+                    """
+                ),
+                {"username": user.username},
+            ).one().id
+        return {"user_id": id}
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return {"success": False, "error": str(e)}
 
 @router.delete("/{user_id}/delete")
 def delete_user(user_id: int):
+    """
+    Deletes a user with the given id.
+    """
     with db.engine.begin() as connection:
         connection.execute(
             sqlalchemy.text(
@@ -85,3 +58,76 @@ def delete_user(user_id: int):
             {"user_id": user_id},
         )
     return "OK"
+
+@router.get("/{user_id}/inventory")
+def get_inventory(user_id: int):
+    """
+    Provides the username, amount of gold, and treats in the inventory of the user 
+    with the given id.
+    """
+    try:
+        with db.engine.begin() as connection:
+            inventory = connection.execute(
+                sqlalchemy.text("""
+                    SELECT
+                        u.username,
+                        u.gold,
+                        i.treat_sku,
+                        i.quantity
+                    FROM users u
+                    LEFT JOIN users_treat_inventory i
+                        ON i.user_id = u.id
+                        AND i.quantity > 0
+                    WHERE u.id = :id
+                """), 
+                {"id": user_id}).mappings()
+            
+            if not inventory:
+                return {"success": False, "error": f"User {user_id} does not exist."}
+
+        treat_list = []
+        username = None
+        gold = None
+        
+        for item in inventory:
+            if username is None and gold is None:
+                username = item["username"]
+                gold = item["gold"]
+                
+            if item["treat_sku"]:
+                treat_list.append({"username": item["treat_sku"], "quantity": item["quantity"]})
+            
+        if not username or not gold:
+            return {"success": False, "error": f"Could not get inventory for user {user_id}"}
+
+        return { "name": username, "gold": gold, "treats": treat_list }
+            
+    except Exception as e:
+        print(f"An unexpected error has occurred: {e}")
+        return {"success": False, "error": str(e)}
+    
+@router.get("/{user_id}/adoptions")
+def get_adoptions(user_id: int):
+    """
+    Provides the name and stage of each creature the user with the given id has adopted. 
+    """
+    try:
+        with db.engine.begin() as connection:
+            adoptions = connection.execute(
+                sqlalchemy.text("""
+                    SELECT 
+                        name, stage
+                    FROM user_creature_connection u
+                    LEFT JOIN creatures c ON u.creature_id = c.id
+                    WHERE user_id = :id
+                        AND u.is_adopted = True
+                """),
+                {"id": user_id}).mappings().fetchall()
+
+        print(f"Adoptions: {adoptions}")
+
+        return adoptions
+            
+    except Exception as e:
+        print(f"An unexpected error has occurred: {e}")
+        return {"success": False, "error": str(e)}
