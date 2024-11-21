@@ -81,9 +81,6 @@ def get_inventory(user_id: int):
                     WHERE u.id = :id
                 """), 
                 {"id": user_id}).mappings()
-            
-            if not inventory:
-                return {"success": False, "error": f"User {user_id} does not exist."}
 
         treat_list = []
         username = None
@@ -98,7 +95,7 @@ def get_inventory(user_id: int):
                 treat_list.append({"username": item["treat_sku"], "quantity": item["quantity"]})
             
         if not username or not gold:
-            return {"success": False, "error": f"Could not get inventory for user {user_id}"}
+            return {"success": False, "error": f"User {user_id} does not exist."}
 
         return { "name": username, "gold": gold, "treats": treat_list }
             
