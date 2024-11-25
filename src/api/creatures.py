@@ -114,7 +114,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     FROM users u
                     LEFT JOIN (
                         SELECT user_id, treat_sku, satiety, quantity
-                        FROM users_treat_inventory
+                        FROM user_inventory_view
                         JOIN treats 
                             ON sku = treat_sku 
                         ) AS inventory
@@ -144,8 +144,6 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     AND user_id = :user_id
                 """),
                 {"creature": creature_id, "user_id": user_id}).mappings().fetchone()
-            
-            print(f"Creature stats: {stats}")
 
             if stats["remaining_hunger"] and inventory:                    
                 feed_success = True
@@ -191,18 +189,15 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 
                 connection.execute(
                     sqlalchemy.text("""
-                        UPDATE users 
-                        SET gold = gold + :gold_earned 
-                        WHERE id = :user
+                        INSERT INTO user_gold (user_id, amount)
+                        VALUES (:user, :gold_earned)
                     """),
                     {"gold_earned": gold_earned, "user": user_id})
                 
                 connection.execute(
                     sqlalchemy.text("""
-                        UPDATE users_treat_inventory 
-                        SET quantity = quantity - 1
-                        WHERE user_id = :user
-                            AND treat_sku = :sku
+                        INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
+                        VALUES (:user, :sku, -1)
                     """),
                     {"user": user_id, "sku": treat_sku})
 
@@ -276,9 +271,8 @@ def play_with_creature(user_id: int, creature_id: int):
                 
                 connection.execute(
                     sqlalchemy.text("""
-                        UPDATE users 
-                        SET gold = gold + :gold_earned 
-                        WHERE id = :user
+                        INSERT INTO user_gold (user_id, amount)
+                        VALUES (:user, :gold_earned) 
                     """),
                     {"gold_earned": gold_earned, "user": user_id})
         

@@ -71,13 +71,15 @@ def get_inventory(user_id: int):
                 sqlalchemy.text("""
                     SELECT
                         u.username,
-                        u.gold,
+                        g.gold,
                         i.treat_sku,
                         i.quantity
                     FROM users u
-                    LEFT JOIN users_treat_inventory i
+                    LEFT JOIN user_inventory_view i
                         ON i.user_id = u.id
                         AND i.quantity > 0
+                    LEFT JOIN gold_view g
+                        ON g.user_id = u.id
                     WHERE u.id = :id
                 """), 
                 {"id": user_id}).mappings()
@@ -94,7 +96,7 @@ def get_inventory(user_id: int):
             if item["treat_sku"]:
                 treat_list.append({"username": item["treat_sku"], "quantity": item["quantity"]})
             
-        if not username or not gold:
+        if username == None or gold == None:
             return {"success": False, "error": f"User {user_id} does not exist."}
 
         return { "name": username, "gold": gold, "treats": treat_list }
