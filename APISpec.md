@@ -236,6 +236,14 @@ Creates a new user with the specified username.
 
 Deletes user profile.
 
+**Request**:
+
+```json
+{
+  "user_id": "integer"
+}
+```
+
 **Response**:
 
 ```json
