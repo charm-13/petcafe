@@ -61,7 +61,7 @@ _LGTM_ <br>yay :)
 <br>We added a message to feed to indicate what happened with the treat. With play, the only time success will be false is when happiness is maxed out.
 
 6. _Currently, it doesn't seem like username is being used for anything after being created._
-<br>Username is not a required field anymore
+<br>Username is now used for user authentication
 
 7. _It would be a good idea to specify that POST /carts/{cart_id}/checkout should only be called once for a specific cart. Since there would no need to keep the cart around unless you want to add an order history for all users._
 <br>We are changing the logic for cart checkouts to fix this
