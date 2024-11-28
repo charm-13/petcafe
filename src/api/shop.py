@@ -62,11 +62,6 @@ def purchase(purchase: Purchase):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                        WITH treat AS (
-                            SELECT sku, price
-                            FROM treats
-                            WHERE t.sku = :treat_sku
-                        )
                         SELECT
                             u.id,
                             g.gold,
@@ -74,8 +69,9 @@ def purchase(purchase: Purchase):
                             t.price
                         FROM users u
                         JOIN gold_view g ON g.user_id = u.id
-                        CROSS JOIN treat t
+                        CROSS JOIN treats t
                         WHERE u.id = :user_id
+                            AND t.sku = :treat_sku
                         """
                     ),
                     {"user_id": purchase.user_id, "treat_sku": purchase.treat_sku},
@@ -83,19 +79,11 @@ def purchase(purchase: Purchase):
                 .mappings()
                 .fetchone()
             )
-            
-            print(f"{request}")
 
-            if (request["id"] or request["gold"]) is None:
+            if request is None:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {purchase.user_id} does not exist.",
-                )
-
-            if (request["sku"] or request["price"]) is None:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Treat {purchase.treat_sku} does not exist.",
+                    detail=f"User {purchase.user_id} and/or treat {purchase.treat_sku} does not exist.",
                 )
 
             cost = request["price"] * purchase.quantity
