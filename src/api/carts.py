@@ -12,29 +12,40 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
-
 class User(BaseModel):
     user_id: int
-    username: str
-
 
 @router.post("/")
 def create_cart(new_cart: User) -> dict[str, int]:
     """
     Creates a new cart for a specific user.
     """
-    with db.engine.begin() as connection:
-        id = connection.execute(
-            sqlalchemy.text("""INSERT INTO carts (user_id, created_at)
-                            SELECT :user_id, CURRENT_TIMESTAMP AT TIME ZONE 'America/Los_Angeles'
-                            RETURNING id"""),
-            {"user_id": new_cart.user_id}
-        ).mappings().fetchone()
-        
-    cart_id = id["id"]
-        
-    print(f"cart id: {cart_id}, new cart for: {new_cart}")
-    return { "cart_id": cart_id }
+    try:
+        with db.engine.begin() as connection:
+            id = connection.execute(
+                sqlalchemy.text("""
+                    INSERT INTO carts (user_id, created_at)
+                    SELECT :user_id, CURRENT_TIMESTAMP
+                    WHERE :user_id IN (
+                        SELECT id FROM users
+                    )
+                    RETURNING carts.id
+                    """),
+                {"user_id": new_cart.user_id}
+            ).mappings().fetchone()
+            
+            if id == None:
+                # TODO: http
+                return {"success": False, "error": f"Not a valid user_id: {new_cart.user_id}"} 
+            
+        cart_id = id["id"]
+            
+        print(f"cart id: {cart_id}, new cart for: {new_cart}")
+        return { "cart_id": cart_id }
+    
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return {"success": False, "error": str(e)} # TODO: http
 
 
 class CartItem(BaseModel):
@@ -46,36 +57,37 @@ def set_item_quantity(cart_id: int, item_sku: str, cart_item: CartItem):
     """ 
     Updates the quantity of a specific item in a cart.
     """
+    if cart_item.quantity <= 0:
+        return {"success": False, "error": f"quantity needs to be at least 1."}
+        
     print(f"Finding cart {cart_id}...")
     
     try:
         with db.engine.begin() as connection:
             ids = connection.execute(
-                sqlalchemy.text("""SELECT id 
-                                FROM carts 
-                                WHERE id = :cart_id"""), 
-                {"cart_id": cart_id}
-            ).fetchone()
+                sqlalchemy.text("""
+                    INSERT INTO carts_items (cart_id, item_sku, quantity) 
+                    SELECT :id, :sku, :amt
+                    WHERE :id IN (
+                        SELECT id FROM carts 
+                    )
+                    ON CONFLICT (cart_id, item_sku) 
+                        DO UPDATE 
+                        SET quantity = :amt
+                    RETURNING cart_id"""), 
+                {"id": cart_id, "sku": item_sku, "amt": cart_item.quantity}
+            ).mappings().fetchone()
             
             if ids is None:
-                print(f"cart {cart_id} doesn't exist")
-                return {"success": False} 
-        
-            connection.execute(
-                sqlalchemy.text("""INSERT INTO carts_items (cart_id, item_sku, quantity) 
-                                VALUES (:id, :sku, :amt)
-                                ON CONFLICT (cart_id, item_sku) 
-                                DO UPDATE 
-                                SET quantity = :amt"""), 
-                {"id": cart_id, "sku": item_sku, "amt": cart_item.quantity}
-            )
+                #TODO: http
+                return {"success": False, "error": f"cart {cart_id} doesn't exist"} 
 
         print(f"Added {cart_item.quantity} {item_sku} to cart {cart_id}")
         return {"success": True}
     
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": str(e)} #TODO: http
 
 
 @router.post("/{cart_id}/checkout")
