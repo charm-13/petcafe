@@ -170,7 +170,7 @@ Done. Now, the user must input a quantity of 1 or greater.
 <br>Not true, quantity is updated on each call to accurately reflect how much the user has
 
 4. _Although this might just be a personal preference, you could make it more explicit that if the creature liked the treat it was just fed when you call POST /users/{user_id}/creatures/{creature_id}/feed/{treat_id}. You could return a message with a response from the creature. For example, if the creature hated the you could return a message like "{creature_name} tossed the {treat_name} aside" or if they where feed their favorite treat "{creature_name} devoured the {treat_name}"_
-<br>We will have a message in the response body for this
+<br>We now have a message in the response body to indicate this
 
 5. _play_with_creature() doesn't check if the user enters an invalid user_id or creature_id and returns and Internal Server Error if either of these values aren't in the table in this query_
 
@@ -182,12 +182,14 @@ stats = connection.execute(sqlalchemy.text("""SELECT happiness, COALESCE(user_cr
                                                 LEFT JOIN user_creature_connection 
                                                     ON creatures.id = user_creature_connection.creature_id AND user_id = :user_id"""),
                                                 {"creature": creature_id, "user_id":user_id}).mappings().fetchone()`
+<br>The sql is now wrapped in a try/except block to handle this
+
 #### users.py
 1. _The DELETE query in delete_user() doesn't need to be formatted. Since it can easily fit in one line and just a readable on most displays._
-<br>We are trying to use a formatting convention for our queries, which means that it might remain a multi line query f
+<br>We are trying to use a formatting convention for our queries, which means that it might remain a multi line query 
 
 2. _create_user() Can accept an empty string ("") as a username. Which doesn't seem to affect anything right now, but you should keep that in mind if you want to implement anything using the username in the future. So it would be a good idea to come up with some guidelines for creating a username._
-<br>Resolved
+<br>Resolved, username now has to be between 5 and 20 characters
 
 #### More general comments
 _You could move all your BaseModel (i.e NewUser and CartItem) Classes to the top of each file to improve readability._
@@ -195,6 +197,26 @@ _You could move all your BaseModel (i.e NewUser and CartItem) Classes to the top
 
 ## Test Results
 ### Issue #9
+
+### Issue #6
+
+## 1. Pet Cafe User Purchasing Example Flow 
+Expected output
+
+## 2. Pet Cafe User-Pet Interaction Example Flow
+Expected output
+
+## 3. Pet Cafe User Viewing Example Flow
+Expected output
+
+## New use cases
+1. dragonh8tr66 - Implemented new cart logic to handle purchases
+
+2. impatient person
+Expected output
+
+3. TurtleLover578 - Expected output
+
 
 ## Product Ideas
 ### Issue #10
@@ -206,8 +228,8 @@ _You could move all your BaseModel (i.e NewUser and CartItem) Classes to the top
 
 ### Issue #11
 
-_Create an endpoint that can slowly lower the affinity levels of the pets over time if the user hasn't interacted with them in a significant amount of time. Which can be called every hour or some other specified amount of time. In order to encourage the user to regularly interact with the pet._
+- _Create an endpoint that can slowly lower the affinity levels of the pets over time if the user hasn't interacted with them in a significant amount of time. Which can be called every hour or some other specified amount of time. In order to encourage the user to regularly interact with the pet._
 <br>We might implement this as a cron job later
 
-_Create an endpoint that allows for a special interaction with the pet once they are adopted like being able to rename the pet for example. Or being able to release the pet. Since currently adopting pets has no purpose other than saying that you adopt them all. Or even add the ability for an adopted pet to play with non-adopted pets._
+- _Create an endpoint that allows for a special interaction with the pet once they are adopted like being able to rename the pet for example. Or being able to release the pet. Since currently adopting pets has no purpose other than saying that you adopt them all. Or even add the ability for an adopted pet to play with non-adopted pets._
 <br>We created the breeding and evolution endpoints so adoption can lead to something now
