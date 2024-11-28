@@ -28,9 +28,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(shop.router)
 app.include_router(users.router)
 app.include_router(creatures.router)
+app.include_router(shop.router)
 
 @app.exception_handler(exceptions.RequestValidationError)
 @app.exception_handler(ValidationError)

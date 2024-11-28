@@ -62,23 +62,29 @@ def purchase(purchase: Purchase):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                    SELECT
-                        u.id,
-                        g.gold,
-                        t.sku,
-                        t.price
-                    FROM users u
-                    JOIN gold_view g ON g.user_id = u.id
-                    CROSS JOIN treats t
-                    WHERE t.sku = :treat_sku
-                        OR u.id = :user_id
-                    """
+                        WITH treat AS (
+                            SELECT sku, price
+                            FROM treats
+                            WHERE t.sku = :treat_sku
+                        )
+                        SELECT
+                            u.id,
+                            g.gold,
+                            t.sku,
+                            t.price
+                        FROM users u
+                        JOIN gold_view g ON g.user_id = u.id
+                        CROSS JOIN treat t
+                        WHERE u.id = :user_id
+                        """
                     ),
                     {"user_id": purchase.user_id, "treat_sku": purchase.treat_sku},
                 )
                 .mappings()
                 .fetchone()
             )
+            
+            print(f"{request}")
 
             if (request["id"] or request["gold"]) is None:
                 raise HTTPException(
