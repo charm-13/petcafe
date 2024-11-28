@@ -11,28 +11,49 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
+
 @router.get("/{user_id}/inventory")
 def get_inventory(user_id: int):
     with db.engine.begin() as connection:
-        user = connection.execute(
-            sqlalchemy.text("""SELECT username, gold
+        user = (
+            connection.execute(
+                sqlalchemy.text(
+                    """SELECT username, gold
                                 FROM users
-                                WHERE users.id = :id"""),
-                                {"id": user_id}).mappings().fetchone()
-        treats = connection.execute(
-            sqlalchemy.text("""SELECT treat_sku, quantity 
+                                WHERE users.id = :id"""
+                ),
+                {"id": user_id},
+            )
+            .mappings()
+            .fetchone()
+        )
+        treats = (
+            connection.execute(
+                sqlalchemy.text(
+                    """SELECT treat_sku, quantity 
                                 FROM users_treat_inventory
                                 WHERE user_id = :id
-                                AND quantity > 0"""),
-                                {"id": user_id}).mappings().fetchall()
-        pets = connection.execute(
-            sqlalchemy.text("""SELECT name 
+                                AND quantity > 0"""
+                ),
+                {"id": user_id},
+            )
+            .mappings()
+            .fetchall()
+        )
+        pets = (
+            connection.execute(
+                sqlalchemy.text(
+                    """SELECT name 
                                 FROM user_creature_connection
                                 LEFT JOIN creatures ON user_creature_connection.creature_id = creatures.id
                                 WHERE user_id = :id
-                                AND user_creature_connection.is_adopted = True"""),
-                                {"id": user_id}).mappings().fetchall()
-        
+                                AND user_creature_connection.is_adopted = True"""
+                ),
+                {"id": user_id},
+            )
+            .mappings()
+            .fetchall()
+        )
 
     treat_list = []
     pet_list = []
@@ -46,8 +67,8 @@ def get_inventory(user_id: int):
     return {
         "name": user["username"],
         "treats": treat_list,
-        "gold": user["gold"], 
-        "pets": pet_list
+        "gold": user["gold"],
+        "pets": pet_list,
     }
 
 
@@ -58,9 +79,10 @@ class NewUser(BaseModel):
 @router.post("/create")
 def create_user(user: NewUser):
     with db.engine.begin() as connection:
-        id = connection.execute(
-            sqlalchemy.text(
-                """
+        id = (
+            connection.execute(
+                sqlalchemy.text(
+                    """
                 INSERT INTO users (username)
                            VALUES (:username)
                 ON CONFLICT (username)
@@ -68,9 +90,12 @@ def create_user(user: NewUser):
                         SET username = excluded.username
                 RETURNING id
                 """
-            ),
-            {"username": user.username},
-        ).one().id
+                ),
+                {"username": user.username},
+            )
+            .one()
+            .id
+        )
     return {"user_id": id}
 
 
