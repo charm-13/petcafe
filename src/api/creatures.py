@@ -12,7 +12,6 @@ router = APIRouter(
 )
 
 
-
 @router.get("/")
 def get_creatures(user_id: int):
     """
@@ -229,7 +228,6 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                         "affinity": change_in_affinity,
                     },
                 )
-            
 
             connection.execute(
                 sqlalchemy.text(
@@ -249,40 +247,40 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
             )
 
             connection.execute(
-                    sqlalchemy.text(
-                        """
+                sqlalchemy.text(
+                    """
                         UPDATE creatures 
                         SET happiness = happiness + :happiness,
                         hunger = hunger + :hunger 
                         WHERE id = :creature
                     """
-                    ),
-                    {
-                        "happiness": change_in_happiness,
-                        "hunger": change_in_hunger,
-                        "creature": creature_id,
-                    },
-                )
+                ),
+                {
+                    "happiness": change_in_happiness,
+                    "hunger": change_in_hunger,
+                    "creature": creature_id,
+                },
+            )
 
             connection.execute(
-                    sqlalchemy.text(
-                        """
+                sqlalchemy.text(
+                    """
                         INSERT INTO user_gold (user_id, amount)
                         VALUES (:user, :gold_earned)
                     """
-                    ),
-                    {"gold_earned": gold_earned, "user": user_id},
-                )
+                ),
+                {"gold_earned": gold_earned, "user": user_id},
+            )
 
             connection.execute(
-                    sqlalchemy.text(
-                        """
+                sqlalchemy.text(
+                    """
                         INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
                         VALUES (:user, :sku, -1)
                     """
-                    ),
-                    {"user": user_id, "sku": treat_sku},
-                )
+                ),
+                {"user": user_id, "sku": treat_sku},
+            )
 
         return {
             "feed_success": feed_success,
@@ -425,7 +423,6 @@ def adopt_creature(user_id: int, creature_id: int):
     except Exception as e:
         print(f"An unexpected error has occurred: {e}")
         return {"success": False, "error": str(e)}
-
 
 
 class NewCreature(BaseModel):

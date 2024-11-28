@@ -12,7 +12,6 @@ router = APIRouter(
 )
 
 
-
 class NewUser(BaseModel):
     username: str
 
