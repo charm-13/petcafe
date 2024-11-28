@@ -188,29 +188,25 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
 
                 if treat_sku == stats["fav_treat"]:
                     gold_earned = 5
-                    change_in_happiness = (
-                        10 if remaining_happiness >= 10 else remaining_happiness
-                    )
-                    change_in_affinity = (
-                        5 if remaining_affinity >= 5 else remaining_affinity
-                    )
+                    change_in_happiness = min(10, remaining_happiness)
+                    change_in_affinity = min(5, remaining_affinity)
                     message = f"{stats["name"]} devoured the treat!"
 
                 elif treat_sku == stats["hated_treat"]:
-                    change_in_happiness = -5 if remaining_happiness <= 95 else 0
-                    change_in_affinity = -2 if remaining_affinity <= 98 else 0
+                    change_in_happiness = (
+                        -5 if remaining_happiness <= 95 else (remaining_happiness - 100)
+                    )
+                    change_in_affinity = (
+                        -2 if remaining_affinity <= 98 else (remaining_affinity - 100)
+                    )
                     change_in_hunger = 0
                     message = f"{stats["name"]} spat out the treat!"
 
-            else:
-                gold_earned = 3
-                change_in_happiness = (
-                    2 if remaining_happiness >= 2 else remaining_happiness
-                )
-                change_in_affinity = (
-                    2 if remaining_affinity >= 2 else remaining_affinity
-                )
-                message = f"{stats["name"]} ate the treat"
+                else:
+                    gold_earned = 3
+                    change_in_happiness = min(2, remaining_happiness)
+                    change_in_affinity = min(2, remaining_affinity)
+                    message = f"{stats["name"]} ate the treat"
 
                 connection.execute(
                     sqlalchemy.text(
