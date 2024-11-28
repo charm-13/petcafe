@@ -20,9 +20,10 @@ def get_inventory(user_id: int):
                                 WHERE users.id = :id"""),
                                 {"id": user_id}).mappings().fetchone()
         treats = connection.execute(
-            sqlalchemy.text("""SELECT treat_sku 
+            sqlalchemy.text("""SELECT treat_sku, quantity 
                                 FROM users_treat_inventory
-                                WHERE user_id = :id"""),
+                                WHERE user_id = :id
+                                AND quantity > 0"""),
                                 {"id": user_id}).mappings().fetchall()
         pets = connection.execute(
             sqlalchemy.text("""SELECT name 
@@ -36,7 +37,7 @@ def get_inventory(user_id: int):
     treat_list = []
     pet_list = []
     for treat in treats:
-        treat_list.append(treat["treat_sku"])
+        treat_list.append({"treat": treat["treat_sku"], "quantity": treat["quantity"]})
     for pet in pets:
         pet_list.append(pet["name"])
 

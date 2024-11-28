@@ -40,19 +40,19 @@ _LGTM_ yay :)
 ### Issue #17
 
 1. _The user has an inventory of snacks that never runs out (if the user buys a snack it will always show up in their inventory when they call GET /users/{user_id}/inventory and can't be removed) so the fact that PUT /carts/{cart_id}/items/{item_sku} requests that the user to input a quantity of snacks is pointless since the code doesn't seem to check if the user has enough snacks to feed the creatures and will just let the user continuously feed creature until their hunger level reaches 100._
-<br>Not true because we change quantity in the feed endpoint
+<br>This is not true because we do change quantity in the feed endpoint
 
 2. _Going back to the previous point GET /users/{user_id}/inventory should also show how many of a specific snack the user has in their inventory if you are going to be asking the user how many of a certain snack they want to buy in PUT /carts/{cart_id}/items/{item_sku}._
-<br>To be fixed
+<br>We now return a list of dictionaries with the name and quantity of each treat
 
 3. _Right now adopting a creature doesn't seem serve a purpose other than changing is_adopted from false to true. You could use it to unlock other special interactions with the creatures you can only do if you adopt a creature._
-<br>Addressed in our new endpoints
+<br>Our new endpoints implement special functionalities with creatures that are adopted
 
 4. _The users_treat_inventory table referenced in creatures.py for the feed_creature() function is not in the schema.sql file._
-<br>To be fixed
+<br>We updated schema.sql to include the table
 
 5. _Instead of returning a boolean for play_success and feed_success when playing with or feeding a creature you can throw an error saying that the happiness or hunger respectively are maxed and won't raise the creature's affinity. To be more explicit about what's happening._
-<br>To be fixed
+<br>We added a message to feed to indicate what happened with the treat. With play, the only time success will be false is when happiness is maxed out.
 
 6. _Currently, it doesn't seem like username is being used for anything after being created._
 <br>Username is not a required field anymore
@@ -70,7 +70,7 @@ _LGTM_ yay :)
 <br>These values go down periodically so the user would just have to wait to be able to interact with the creatureagain
 
 11. _In POST /users/{user_id}/creatures/{creature_id}/feed/{treat_id} you could also return a string with the creature's response to the treat it was just fed to make it more clear to the user if the creature liked the treat it was just fed._
-<br>To be fixed
+<br>We included a message in the response body for this
 
 12. _Since DELETE /users/{user_id}/delete takes in the user_id as input you should specify that with a request block alongside the response block in APISpec.md_
 <br>Resolved

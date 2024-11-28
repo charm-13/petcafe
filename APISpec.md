@@ -127,6 +127,7 @@ Feeds the specified creature a treat of the specified id. Response returns the g
 {
     /* All 0 if pet is full */
         "feed_success": "boolean", /* If the creature ate the treat (only false if hunger maxed out) */
+        "message": "string",
         "gold_earned": "integer", /* 0 if hated, 3 if normal, 5 if loved */
         "change_in_hunger": "integer", /* 0 if treat is hated; else dependent on treat satiety */
         "change_in_happiness": "integer", /* 10 if favorite, 5 if normal, -5 if hated */

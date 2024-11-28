@@ -94,6 +94,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
     change_in_hunger = 0    # 0 if treat is hated; else dependent on treat satiety 
     change_in_happiness = 0 # 10 if favorite, 5 if normal, -5 if hated 
     change_in_affinity = 0  # 5 if favorite, 2 if normal, -2 if hated 
+    message = "Cannot feed this creature right now"
     
     with db.engine.begin() as connection:
         stats = connection.execute(
@@ -101,6 +102,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 SELECT 
                     fav_treat, 
                     hated_treat, 
+                    name,
                     (e.max_happiness - happiness) AS remaining_happiness, 
                     (e.max_hunger - hunger) AS remaining_hunger, 
                     COALESCE(user_creature_connection.affinity, 0) AS affinity
@@ -140,16 +142,19 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 gold_earned = 5
                 change_in_happiness = 10 if remaining_happiness >= 10 else remaining_happiness
                 change_in_affinity = 5 if remaining_affinity >= 5 else remaining_affinity
+                message = f"{stats["name"]} devoured the treat!"
 
             elif treat_sku == stats["hated_treat"]:
                 change_in_happiness = -5 if remaining_happiness <= 95 else 0
                 change_in_affinity = -2 if remaining_affinity <= 98 else 0
                 change_in_hunger = 0 
+                message = f"{stats["name"]} spat out the treat!"
             
             else:
                 gold_earned = 3
                 change_in_happiness = 2 if remaining_happiness >= 2 else remaining_happiness
                 change_in_affinity = 2 if remaining_affinity >= 2 else remaining_affinity
+                message = f"{stats["name"]} ate the treat"
                 
             connection.execute(
                 sqlalchemy.text("""
@@ -191,6 +196,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
             
     return {
         "feed_success": feed_success, 
+        "message": message,
         "gold_earned": gold_earned,
         "change_in_hunger": change_in_hunger, 
         "change_in_happiness": change_in_happiness, 
@@ -213,7 +219,7 @@ def play_with_creature(user_id: int, creature_id: int):
         stats = connection.execute(
             sqlalchemy.text("""
                 SELECT 
-                    happiness, e.max_happiness,
+                    happiness, e.max_happiness, 
                     COALESCE(user_creature_connection.affinity, 0) AS affinity
                 FROM creatures 
                 JOIN creature_types 
