@@ -33,19 +33,20 @@ def create_user(user: NewUser):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                    INSERT INTO users (username)
-                            VALUES (:username)
-                    ON CONFLICT (username)
-                    DO UPDATE
-                            SET username = excluded.username
-                    RETURNING id
-                    """
+                        INSERT INTO users (username)
+                        VALUES (:username)
+                        ON CONFLICT (username)
+                        DO UPDATE
+                        SET username = excluded.username
+                        RETURNING id
+                        """
                     ),
                     {"username": user.username},
                 )
                 .one()
                 .id
             )
+
         return {"user_id": id}
 
     except Exception as e:
@@ -63,7 +64,8 @@ def delete_user(user_id: int):
             sqlalchemy.text(
                 """
                 DELETE FROM users
-                WHERE id = :user_id"""
+                WHERE id = :user_id
+                """
             ),
             {"user_id": user_id},
         )
@@ -93,7 +95,7 @@ def get_inventory(user_id: int):
                     LEFT JOIN gold_view g
                         ON g.user_id = u.id
                     WHERE u.id = :id
-                """
+                    """
                 ),
                 {"id": user_id},
             ).mappings()
@@ -133,13 +135,13 @@ def get_adoptions(user_id: int):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                    SELECT 
-                        name, stage
-                    FROM user_creature_connection u
-                    LEFT JOIN creatures c ON u.creature_id = c.id
-                    WHERE user_id = :id
-                        AND u.is_adopted = True
-                """
+                        SELECT 
+                            name, stage
+                        FROM user_creature_connection u
+                        JOIN creatures c ON u.creature_id = c.id
+                        WHERE user_id = :id
+                            AND u.is_adopted = True
+                        """
                     ),
                     {"id": user_id},
                 )
