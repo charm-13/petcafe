@@ -129,7 +129,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                         treat_sku,
                         satiety
                     FROM users u
-                    LEFT JOIN (
+                    JOIN (
                         SELECT user_id, treat_sku, satiety, quantity
                         FROM user_inventory_view
                         JOIN treats 
@@ -147,6 +147,11 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 .fetchone()
             )
 
+            print(f"Inventory: {inventory}")
+
+            if not inventory:
+                message = "This treat is not in your inventory"
+
             stats = (
                 connection.execute(
                     sqlalchemy.text(
@@ -155,8 +160,10 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                         fav_treat, 
                         hated_treat, 
                         name,
-                        (e.max_happiness - happiness) AS remaining_happiness, 
-                        (e.max_hunger - hunger) AS remaining_hunger, 
+                        happiness,
+                        max_happiness, 
+                        max_hunger, 
+                        hunger,
                         COALESCE(user_creature_connection.affinity, 0) AS affinity
                     FROM creatures 
                     JOIN creature_types 
@@ -175,11 +182,14 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 .fetchone()
             )
 
-            if stats["remaining_hunger"] and inventory:
+            if stats["hunger"] < stats["max_hunger"] and inventory:
                 feed_success = True
-                remaining_hunger = stats["remaining_hunger"]
-                remaining_happiness = stats["remaining_happiness"]
-                remaining_affinity = 100 - stats["affinity"]
+                hunger = stats["hunger"]
+                happiness = stats["happiness"]
+                affinity = stats["affinity"]
+                remaining_hunger = stats["max_hunger"] - hunger
+                remaining_happiness = stats["max_happiness"] - happiness
+                remaining_affinity = 100 - affinity
                 change_in_hunger = (
                     inventory["satiety"]
                     if remaining_hunger >= inventory["satiety"]
@@ -193,8 +203,8 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     message = f"{stats["name"]} devoured the treat!"
 
                 elif treat_sku == stats["hated_treat"]:
-                    change_in_happiness = max(-5, -1*remaining_happiness)
-                    change_in_affinity = max(-2, -1*remaining_affinity)
+                    change_in_happiness = max(-5, -1 * happiness)
+                    change_in_affinity = max(-2, -1 * affinity)
                     change_in_hunger = 0
                     message = f"{stats["name"]} spat out the treat!"
 
@@ -221,58 +231,41 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     },
                 )
 
-            connection.execute(
-                sqlalchemy.text(
-                    """
-                    INSERT INTO user_creature_connection (user_id, creature_id, affinity)
-                    VALUES (:user, :creature, :affinity)
-                    ON CONFLICT(user_id, creature_id)
-                    DO UPDATE 
-                    SET affinity = user_creature_connection.affinity + :affinity
-                """
-                ),
-                {
-                    "user": user_id,
-                    "creature": creature_id,
-                    "affinity": change_in_affinity,
-                },
-            )
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                            UPDATE creatures 
+                            SET happiness = happiness + :happiness,
+                            hunger = hunger + :hunger 
+                            WHERE id = :creature
+                        """
+                    ),
+                    {
+                        "happiness": change_in_happiness,
+                        "hunger": change_in_hunger,
+                        "creature": creature_id,
+                    },
+                )
 
-            connection.execute(
-                sqlalchemy.text(
-                    """
-                        UPDATE creatures 
-                        SET happiness = happiness + :happiness,
-                        hunger = hunger + :hunger 
-                        WHERE id = :creature
-                    """
-                ),
-                {
-                    "happiness": change_in_happiness,
-                    "hunger": change_in_hunger,
-                    "creature": creature_id,
-                },
-            )
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                            INSERT INTO user_gold (user_id, amount)
+                            VALUES (:user, :gold_earned)
+                        """
+                    ),
+                    {"gold_earned": gold_earned, "user": user_id},
+                )
 
-            connection.execute(
-                sqlalchemy.text(
-                    """
-                        INSERT INTO user_gold (user_id, amount)
-                        VALUES (:user, :gold_earned)
-                    """
-                ),
-                {"gold_earned": gold_earned, "user": user_id},
-            )
-
-            connection.execute(
-                sqlalchemy.text(
-                    """
-                        INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
-                        VALUES (:user, :sku, -1)
-                    """
-                ),
-                {"user": user_id, "sku": treat_sku},
-            )
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                            INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
+                            VALUES (:user, :sku, -1)
+                        """
+                    ),
+                    {"user": user_id, "sku": treat_sku},
+                )
 
         return {
             "feed_success": feed_success,
