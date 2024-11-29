@@ -12,6 +12,12 @@ router = APIRouter(
 )
 
 
+class NewCreature(BaseModel):
+    creature_id_1: int
+    creature_id_2: int
+    name: str
+
+
 @router.get("/")
 def get_creatures(user_id: int):
     """
@@ -408,12 +414,6 @@ def adopt_creature(user_id: int, creature_id: int):
     except Exception as e:
         print(f"An unexpected error has occurred: {e}")
         return {"success": False, "error": str(e)}
-
-
-class NewCreature(BaseModel):
-    creature_id_1: int
-    creature_id_2: int
-    name: str
 
 
 @router.post("/breed")
