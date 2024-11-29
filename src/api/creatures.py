@@ -193,12 +193,8 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     message = f"{stats["name"]} devoured the treat!"
 
                 elif treat_sku == stats["hated_treat"]:
-                    change_in_happiness = (
-                        -5 if remaining_happiness <= 95 else (remaining_happiness - 100)
-                    )
-                    change_in_affinity = (
-                        -2 if remaining_affinity <= 98 else (remaining_affinity - 100)
-                    )
+                    change_in_happiness = max(-5, -1*remaining_happiness)
+                    change_in_affinity = max(-2, -1*remaining_affinity)
                     change_in_hunger = 0
                     message = f"{stats["name"]} spat out the treat!"
 
