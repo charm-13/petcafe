@@ -29,22 +29,18 @@ def create_user(user: NewUser):
             }
 
         with db.engine.begin() as connection:
-            id = (
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                        INSERT INTO users (username)
-                        VALUES (:username)
-                        ON CONFLICT (username) DO UPDATE
-                        SET username = excluded.username
-                        RETURNING id
-                        """
-                    ),
-                    {"username": user.username},
-                )
-                .one()
-                .id
-            )
+            id = connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO users (username)
+                    VALUES (:username)
+                    ON CONFLICT (username) DO UPDATE
+                    SET username = excluded.username
+                    RETURNING id
+                    """
+                ),
+                {"username": user.username},
+            ).scalar_one()
 
         return {"user_id": id}
 
