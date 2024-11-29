@@ -13,6 +13,13 @@ router = APIRouter(
 )
 
 
+class Purchase(BaseModel):
+    user_id: int
+    order_id: int
+    treat_sku: str
+    quantity: int
+
+
 @router.get("/catalog/")
 def get_catalog():
     """
@@ -35,13 +42,6 @@ def get_catalog():
         )
 
     return treats
-
-
-class Purchase(BaseModel):
-    user_id: int
-    order_id: int
-    treat_sku: str
-    quantity: int
 
 
 @router.post("/purchase")
