@@ -200,19 +200,19 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     gold_earned = 5
                     change_in_happiness = min(10, remaining_happiness)
                     change_in_affinity = min(5, remaining_affinity)
-                    message = f"{stats["name"]} devoured the treat!"
+                    message = f"{stats['name']} devoured the treat!"
 
                 elif treat_sku == stats["hated_treat"]:
                     change_in_happiness = max(-5, -1 * happiness)
                     change_in_affinity = max(-2, -1 * affinity)
                     change_in_hunger = 0
-                    message = f"{stats["name"]} spat out the treat!"
+                    message = f"{stats['name']} spat out the treat!"
 
                 else:
                     gold_earned = 3
                     change_in_happiness = min(2, remaining_happiness)
                     change_in_affinity = min(2, remaining_affinity)
-                    message = f"{stats["name"]} ate the treat"
+                    message = f"{stats['name']} ate the treat"
 
                 connection.execute(
                     sqlalchemy.text(
