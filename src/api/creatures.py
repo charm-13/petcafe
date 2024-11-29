@@ -37,7 +37,7 @@ def get_creatures(user_id: int):
                         ON creatures.id = user_creature_connection.creature_id
                         AND user_id = :user_id
                     ORDER BY creatures.name
-                """
+                    """
                 ),
                 {"user_id": user_id},
             ).mappings()
@@ -74,14 +74,19 @@ def get_creature_stats(user_id: int, creature_id: int):
             c_stats = connection.execute(
                 sqlalchemy.text(
                     """
-                    SELECT name, type, happiness, hunger, stage,
+                    SELECT
+                        name,
+                        type,
+                        happiness,
+                        hunger,
+                        stage,
                         COALESCE(connections.affinity, 0) AS affinity
                     FROM creatures
                     LEFT JOIN user_creature_connection AS connections
                         ON connections.creature_id = creatures.id
                         AND connections.user_id = :u_id
                     WHERE creatures.id = :c_id
-                """
+                    """
                 ),
                 {"u_id": user_id, "c_id": creature_id},
             ).one()
@@ -130,22 +135,26 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                    SELECT 
-                        u.id,
-                        treat_sku,
-                        satiety
-                    FROM users u
-                    JOIN (
-                        SELECT user_id, treat_sku, satiety, quantity
-                        FROM user_inventory_view
-                        JOIN treats 
-                            ON sku = treat_sku 
+                        SELECT
+                            u.id,
+                            treat_sku,
+                            satiety
+                        FROM users u
+                        JOIN (
+                            SELECT
+                                user_id,
+                                treat_sku,
+                                satiety,
+                                quantity
+                            FROM user_inventory_view
+                            JOIN treats
+                                ON sku = treat_sku
                         ) AS inventory
-                        ON user_id = u.id
-                        AND treat_sku = :sku
-                        AND quantity > 0
-                    WHERE u.id = :id
-                """
+                            ON user_id = u.id
+                            AND treat_sku = :sku
+                            AND quantity > 0
+                        WHERE u.id = :id
+                        """
                     ),
                     {"sku": treat_sku, "id": user_id},
                 )
@@ -162,25 +171,25 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                    SELECT 
-                        fav_treat, 
-                        hated_treat, 
-                        name,
-                        happiness,
-                        max_happiness, 
-                        max_hunger, 
-                        hunger,
-                        COALESCE(user_creature_connection.affinity, 0) AS affinity
-                    FROM creatures 
-                    JOIN creature_types 
-                        ON creatures.type = creature_types.type 
-                        AND creatures.id = :creature
-                    JOIN evolution_stages e
-                        ON creatures.stage = e.stage
-                    LEFT JOIN user_creature_connection
-                        ON creatures.id = user_creature_connection.creature_id 
-                    AND user_id = :user_id
-                """
+                        SELECT
+                            fav_treat,
+                            hated_treat,
+                            name,
+                            happiness,
+                            max_happiness,
+                            max_hunger,
+                            hunger,
+                            COALESCE(user_creature_connection.affinity, 0) AS affinity
+                        FROM creatures
+                        JOIN creature_types
+                            ON creatures.type = creature_types.type
+                            AND creatures.id = :creature
+                        JOIN evolution_stages e
+                            ON creatures.stage = e.stage
+                        LEFT JOIN user_creature_connection
+                            ON creatures.id = user_creature_connection.creature_id
+                            AND user_id = :user_id
+                        """
                     ),
                     {"creature": creature_id, "user_id": user_id},
                 )
@@ -225,10 +234,9 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                         """
                         INSERT INTO user_creature_connection (user_id, creature_id, affinity)
                         VALUES (:user, :creature, :affinity)
-                        ON CONFLICT(user_id, creature_id)
-                        DO UPDATE 
+                        ON CONFLICT (user_id, creature_id) DO UPDATE
                         SET affinity = user_creature_connection.affinity + :affinity
-                    """
+                        """
                     ),
                     {
                         "user": user_id,
@@ -240,10 +248,10 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                            UPDATE creatures 
-                            SET happiness = happiness + :happiness,
-                            hunger = hunger + :hunger 
-                            WHERE id = :creature
+                        UPDATE creatures
+                        SET happiness = happiness + :happiness,
+                            hunger = hunger + :hunger
+                        WHERE id = :creature
                         """
                     ),
                     {
@@ -256,8 +264,8 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                            INSERT INTO user_gold (user_id, amount)
-                            VALUES (:user, :gold_earned)
+                        INSERT INTO user_gold (user_id, amount)
+                        VALUES (:user, :gold_earned)
                         """
                     ),
                     {"gold_earned": gold_earned, "user": user_id},
@@ -266,8 +274,8 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                            INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
-                            VALUES (:user, :sku, -1)
+                        INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
+                        VALUES (:user, :sku, -1)
                         """
                     ),
                     {"user": user_id, "sku": treat_sku},
@@ -305,17 +313,20 @@ def play_with_creature(user_id: int, creature_id: int):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                    SELECT 
-                        happiness, e.max_happiness,
-                        COALESCE(user_creature_connection.affinity, 0) AS affinity
-                    FROM creatures 
-                    JOIN creature_types 
-                        ON creatures.type = creature_types.type AND creatures.id = :creature
-                    JOIN evolution_stages e
-                        ON creatures.stage = e.stage
-                    LEFT JOIN user_creature_connection 
-                        ON creatures.id = user_creature_connection.creature_id AND user_id = :user_id
-                """
+                        SELECT
+                            happiness,
+                            e.max_happiness,
+                            COALESCE(user_creature_connection.affinity, 0) AS affinity
+                        FROM creatures
+                        JOIN creature_types
+                            ON creatures.type = creature_types.type
+                            AND creatures.id = :creature
+                        JOIN evolution_stages e
+                            ON creatures.stage = e.stage
+                        LEFT JOIN user_creature_connection
+                            ON creatures.id = user_creature_connection.creature_id
+                            AND user_id = :user_id
+                        """
                     ),
                     {"creature": creature_id, "user_id": user_id},
                 )
@@ -336,10 +347,9 @@ def play_with_creature(user_id: int, creature_id: int):
                         """
                         INSERT INTO user_creature_connection (user_id, creature_id, affinity)
                         VALUES (:user, :creature, :affinity)
-                        ON CONFLICT(user_id, creature_id)
-                        DO UPDATE 
+                        ON CONFLICT (user_id, creature_id) DO UPDATE
                         SET affinity = user_creature_connection.affinity + :affinity
-                    """
+                        """
                     ),
                     {
                         "user": user_id,
@@ -351,10 +361,10 @@ def play_with_creature(user_id: int, creature_id: int):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                        UPDATE creatures 
-                        SET happiness = happiness + :happiness_change 
+                        UPDATE creatures
+                        SET happiness = happiness + :happiness_change
                         WHERE id = :creature
-                    """
+                        """
                     ),
                     {"happiness_change": happiness_change, "creature": creature_id},
                 )
@@ -363,8 +373,8 @@ def play_with_creature(user_id: int, creature_id: int):
                     sqlalchemy.text(
                         """
                         INSERT INTO user_gold (user_id, amount)
-                        VALUES (:user, :gold_earned) 
-                    """
+                        VALUES (:user, :gold_earned)
+                        """
                     ),
                     {"gold_earned": gold_earned, "user": user_id},
                 )
@@ -392,7 +402,7 @@ def adopt_creature(user_id: int, creature_id: int):
                 sqlalchemy.text(
                     """
                     UPDATE user_creature_connection
-                        SET is_adopted = true
+                    SET is_adopted = true
                     WHERE user_id = :u_id
                         AND creature_id = :c_id
                         AND affinity = 100
@@ -427,16 +437,20 @@ def breed_creatures(user_id: int, new: NewCreature):
             result = (
                 connection.execute(
                     sqlalchemy.text(
-                        """SELECT creatures.type, fav_treat, hated_treat
-                                    FROM creatures 
-                                    JOIN user_creature_connection 
-                                    ON creatures.id = creature_id 
-                                    JOIN creature_types 
-                                    ON creatures.type = creature_types.type
-                                    WHERE user_id = :uid 
-                                    AND (creatures.id = :cid1
-                                    OR creatures.id = :cid2)
-                                    AND is_adopted = TRUE"""
+                        """
+                        SELECT
+                            creatures.type,
+                            fav_treat,
+                            hated_treat
+                        FROM creatures
+                        JOIN user_creature_connection
+                            ON creatures.id = creature_id
+                        JOIN creature_types
+                            ON creatures.type = creature_types.type
+                        WHERE user_id = :uid
+                            AND (creatures.id = :cid1 OR creatures.id = :cid2)
+                            AND is_adopted = TRUE
+                        """
                     ),
                     {
                         "uid": user_id,
@@ -474,11 +488,12 @@ def breed_creatures(user_id: int, new: NewCreature):
 
             id = connection.execute(
                 sqlalchemy.text(
-                    """INSERT INTO creatures(name, type)
-                                                    VALUES (:name, :type) 
-                                                    ON CONFLICT (name)
-                                                    DO NOTHING
-                                                    RETURNING id"""
+                    """
+                    INSERT INTO creatures (name, type)
+                    VALUES (:name, :type)
+                    ON CONFLICT (name) DO NOTHING
+                    RETURNING id
+                    """
                 ),
                 {"name": new.name, "type": new_type},
             ).scalar_one_or_none()
@@ -488,18 +503,20 @@ def breed_creatures(user_id: int, new: NewCreature):
 
             connection.execute(
                 sqlalchemy.text(
-                    """INSERT INTO creature_types(type, fav_treat, hated_treat)
-                                            VALUES (:new_type, :fav, :hated)
-                                            ON CONFLICT (type)
-                                            DO NOTHING"""
+                    """
+                    INSERT INTO creature_types (type, fav_treat, hated_treat)
+                    VALUES (:new_type, :fav, :hated)
+                    ON CONFLICT (type) DO NOTHING
+                    """
                 ),
                 {"new_type": new_type, "fav": fav, "hated": hated},
             )
 
             connection.execute(
                 sqlalchemy.text(
-                    """INSERT INTO user_creature_connection(user_id, creature_id, affinity, is_adopted)
-                                            VALUES (:uid, :cid, 100, True)"""
+                    """
+                    INSERT INTO user_creature_connection (user_id, creature_id, affinity, is_adopted)
+                    VALUES (:uid, :cid, 100, True)"""
                 ),
                 {"uid": user_id, "cid": id},
             )
@@ -528,15 +545,21 @@ def evolve_creature(user_id: int, creature_id: int):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                SELECT 
-                    creatures.stage, hunger, happiness, max_hunger, max_happiness,
-                    COALESCE(user_creature_connection.is_adopted, false) AS is_adopted
-                FROM creatures
-                LEFT JOIN user_creature_connection ON creature_id = creatures.id 
-                    AND user_id = :u_id
-                JOIN evolution_stages ON creatures.stage = evolution_stages.stage
-                WHERE creatures.id = :c_id
-            """
+                        SELECT
+                            creatures.stage,
+                            hunger,
+                            happiness,
+                            max_hunger,
+                            max_happiness,
+                            COALESCE(user_creature_connection.is_adopted, false) AS is_adopted
+                        FROM creatures
+                        LEFT JOIN user_creature_connection
+                            ON creature_id = creatures.id 
+                            AND user_id = :u_id
+                        JOIN evolution_stages
+                            ON creatures.stage = evolution_stages.stage
+                        WHERE creatures.id = :c_id
+                        """
                     ),
                     {"u_id": user_id, "c_id": creature_id},
                 )
@@ -575,11 +598,11 @@ def evolve_creature(user_id: int, creature_id: int):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                UPDATE creatures
-                SET stage = stage + 1 
-                WHERE id = :c_id
-                RETURNING stage
-            """
+                        UPDATE creatures
+                        SET stage = stage + 1 
+                        WHERE id = :c_id
+                        RETURNING stage
+                        """
                     ),
                     {"c_id": creature_id},
                 )

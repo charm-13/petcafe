@@ -35,8 +35,7 @@ def create_user(user: NewUser):
                         """
                         INSERT INTO users (username)
                         VALUES (:username)
-                        ON CONFLICT (username)
-                        DO UPDATE
+                        ON CONFLICT (username) DO UPDATE
                         SET username = excluded.username
                         RETURNING id
                         """
@@ -135,10 +134,12 @@ def get_adoptions(user_id: int):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                        SELECT 
-                            name, stage
+                        SELECT
+                            name,
+                            stage
                         FROM user_creature_connection u
-                        JOIN creatures c ON u.creature_id = c.id
+                        JOIN creatures c
+                            ON u.creature_id = c.id
                         WHERE user_id = :id
                             AND u.is_adopted = True
                         """
