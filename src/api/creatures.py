@@ -29,7 +29,11 @@ def get_creatures(user_id: int):
             result = connection.execute(
                 sqlalchemy.text(
                     """
-                    SELECT creatures.name, creatures.type, creatures.id, creatures.stage,
+                    SELECT
+                        creatures.name,
+                        creatures.type,
+                        creatures.id,
+                        creatures.stage,
                         COALESCE(user_creature_connection.is_adopted, false) AS status,
                         COALESCE(user_creature_connection.affinity, 0) AS affinity
                     FROM creatures
