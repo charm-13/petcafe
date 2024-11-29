@@ -111,8 +111,6 @@ def purchase(purchase: Purchase):
                         "quantity": purchase.quantity,
                     },
                 )
-                .mappings()
-                .fetchone()
             )
 
             if success == None:
