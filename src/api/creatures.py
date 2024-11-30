@@ -103,6 +103,9 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
     Feeds the specified creature a treat of the specified id. Response returns the gold earned
     and changes in stats of the creature affected by the action, which are dependent on the treat
     used to feed the creature. If the creature has max hunger level at the time of the call,
+    Feeds the specified creature a treat of the specified id. Response returns the gold earned
+    and changes in stats of the creature affected by the action, which are dependent on the treat
+    used to feed the creature. If the creature has max hunger level at the time of the call,
     the treat is not decremented from the user's inventory.
     """
 
@@ -113,6 +116,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
     change_in_hunger = 0  # 0 if treat is hated; else dependent on treat satiety
     change_in_happiness = 0  # 10 if favorite, 5 if normal, -5 if hated
     change_in_affinity = 0  # 5 if favorite, 2 if normal, -2 if hated
+    message = "Cannot feed this creature right now"
 
     try:
         with db.engine.begin() as connection:
@@ -125,7 +129,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                         treat_sku,
                         satiety
                     FROM users u
-                    LEFT JOIN (
+                    JOIN (
                         SELECT user_id, treat_sku, satiety, quantity
                         FROM user_inventory_view
                         JOIN treats 
@@ -143,6 +147,11 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 .fetchone()
             )
 
+            print(f"Inventory: {inventory}")
+
+            if not inventory:
+                message = "This treat is not in your inventory"
+
             stats = (
                 connection.execute(
                     sqlalchemy.text(
@@ -150,8 +159,11 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     SELECT 
                         fav_treat, 
                         hated_treat, 
-                        (e.max_happiness - happiness) AS remaining_happiness, 
-                        (e.max_hunger - hunger) AS remaining_hunger, 
+                        name,
+                        happiness,
+                        max_happiness, 
+                        max_hunger, 
+                        hunger,
                         COALESCE(user_creature_connection.affinity, 0) AS affinity
                     FROM creatures 
                     JOIN creature_types 
@@ -170,11 +182,14 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 .fetchone()
             )
 
-            if stats["remaining_hunger"] and inventory:
+            if stats["hunger"] < stats["max_hunger"] and inventory:
                 feed_success = True
-                remaining_hunger = stats["remaining_hunger"]
-                remaining_happiness = stats["remaining_happiness"]
-                remaining_affinity = 100 - stats["affinity"]
+                hunger = stats["hunger"]
+                happiness = stats["happiness"]
+                affinity = stats["affinity"]
+                remaining_hunger = stats["max_hunger"] - hunger
+                remaining_happiness = stats["max_happiness"] - happiness
+                remaining_affinity = 100 - affinity
                 change_in_hunger = (
                     inventory["satiety"]
                     if remaining_hunger >= inventory["satiety"]
@@ -183,26 +198,21 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
 
                 if treat_sku == stats["fav_treat"]:
                     gold_earned = 5
-                    change_in_happiness = (
-                        10 if remaining_happiness >= 10 else remaining_happiness
-                    )
-                    change_in_affinity = (
-                        5 if remaining_affinity >= 5 else remaining_affinity
-                    )
+                    change_in_happiness = min(10, remaining_happiness)
+                    change_in_affinity = min(5, remaining_affinity)
+                    message = f"{stats["name"]} devoured the treat!"
 
                 elif treat_sku == stats["hated_treat"]:
-                    change_in_happiness = -5 if remaining_happiness <= 95 else 0
-                    change_in_affinity = -2 if remaining_affinity <= 98 else 0
+                    change_in_happiness = max(-5, -1 * happiness)
+                    change_in_affinity = max(-2, -1 * affinity)
                     change_in_hunger = 0
+                    message = f"{stats["name"]} spat out the treat!"
 
                 else:
                     gold_earned = 3
-                    change_in_happiness = (
-                        2 if remaining_happiness >= 2 else remaining_happiness
-                    )
-                    change_in_affinity = (
-                        2 if remaining_affinity >= 2 else remaining_affinity
-                    )
+                    change_in_happiness = min(2, remaining_happiness)
+                    change_in_affinity = min(2, remaining_affinity)
+                    message = f"{stats["name"]} ate the treat"
 
                 connection.execute(
                     sqlalchemy.text(
@@ -224,11 +234,11 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                        UPDATE creatures 
-                        SET happiness = happiness + :happiness,
-                        hunger = hunger + :hunger 
-                        WHERE id = :creature
-                    """
+                            UPDATE creatures 
+                            SET happiness = happiness + :happiness,
+                            hunger = hunger + :hunger 
+                            WHERE id = :creature
+                        """
                     ),
                     {
                         "happiness": change_in_happiness,
@@ -240,9 +250,9 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                        INSERT INTO user_gold (user_id, amount)
-                        VALUES (:user, :gold_earned)
-                    """
+                            INSERT INTO user_gold (user_id, amount)
+                            VALUES (:user, :gold_earned)
+                        """
                     ),
                     {"gold_earned": gold_earned, "user": user_id},
                 )
@@ -250,15 +260,16 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                        INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
-                        VALUES (:user, :sku, -1)
-                    """
+                            INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
+                            VALUES (:user, :sku, -1)
+                        """
                     ),
                     {"user": user_id, "sku": treat_sku},
                 )
 
         return {
             "feed_success": feed_success,
+            "message": message,
             "gold_earned": gold_earned,
             "change_in_hunger": change_in_hunger,
             "change_in_happiness": change_in_happiness,
