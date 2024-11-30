@@ -2,7 +2,7 @@
 
 ## 1. User Purchasing
 
-### 1.1. Get Catalog - `shop/catalog/` (GET)
+### 1.1. Get Catalog - `/shop/catalog/` (GET)
 
 Retrieves the catalog of items in the cafe.
 
@@ -19,7 +19,7 @@ Retrieves the catalog of items in the cafe.
 ]
 ```
 
-### 1.2. Purchase - `shop/purchase/` (POST)
+### 1.2. Purchase - `/shop/purchase/` (POST)
 
 Creates a new cart for a specific user.
 
@@ -29,7 +29,7 @@ Creates a new cart for a specific user.
 {
   "user_id": "integer",
   "order_id": "integer",
-  "treak_sku": "string",
+  "treat_sku": "string",
   "quantity": "integer"
 }
 ```
