@@ -54,7 +54,7 @@ def get_creatures(user_id: int):
 
         if not creatures:
             raise HTTPException(
-                status_code=404, details=f"User {user_id} does not exist."
+                status_code=404, detail=f"User {user_id} does not exist."
             )
 
         print(f"[get_creatures] User {user_id}'s creature list:", creatures)
@@ -463,8 +463,8 @@ def adopt_creature(user_id: int, creature_id: int):
                     """
                     UPDATE user_creature_connection
                     SET is_adopted = true
-                    WHERE users_id = :u_id
-                    AND creatures_id = :c_id
+                    WHERE user_id = :u_id
+                    AND creature_id = :c_id
                     """
                 ),
                 {"u_id": user_id, "c_id": creature_id},
@@ -488,8 +488,13 @@ def breed_creatures(user_id: int, new: NewCreature):
     """
     Breeds 2 creatures together. Creatures must be adopted by the user.
     """
-
     try:
+        if new.creature_id_1 == new.creature_id_2:
+            raise HTTPException(
+                status_code=403,
+                detail="You cannot breed a creature with itself.",
+            )
+
         with db.engine.begin() as connection:
             result = (
                 connection.execute(
@@ -554,6 +559,17 @@ def breed_creatures(user_id: int, new: NewCreature):
             else:
                 fav, hated = fav_treat1, hated_treat1
 
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO creature_types (type, fav_treat, hated_treat)
+                    VALUES (:new_type, :fav, :hated)
+                    ON CONFLICT (type) DO NOTHING
+                    """
+                ),
+                {"new_type": new_type, "fav": fav, "hated": hated},
+            )
+
             id = connection.execute(
                 sqlalchemy.text(
                     """
@@ -571,17 +587,6 @@ def breed_creatures(user_id: int, new: NewCreature):
                     status_code=409,
                     detail="A creature with the chosen name already exists!",
                 )
-
-            connection.execute(
-                sqlalchemy.text(
-                    """
-                    INSERT INTO creature_types (type, fav_treat, hated_treat)
-                    VALUES (:new_type, :fav, :hated)
-                    ON CONFLICT (type) DO NOTHING
-                    """
-                ),
-                {"new_type": new_type, "fav": fav, "hated": hated},
-            )
 
             connection.execute(
                 sqlalchemy.text(
