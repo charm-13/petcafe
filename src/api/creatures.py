@@ -53,29 +53,31 @@ def get_creatures(user_id: int):
                 .all()
             )
 
+        if not result:
+            raise HTTPException(
+                status_code=404, details=f"User {user_id} does not exist."
+            )
+
+        creatures = []
+        for creature in result:
+            creatures.append(
+                {
+                    "name": creature["name"],
+                    "id": creature["id"],
+                    "type": creature["type"],
+                    "affinity": creature["affinity"],
+                    "is_adopted": creature["is_adopted"],
+                    "stage": creature["stage"],
+                }
+            )
+        print(f"[get_creatures] User {user_id}'s creature list:", creatures)
+        return creatures
+
     except Exception as e:
         print("[get_creatures] An unexpected error has occurred:", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve creatures. Error: {e}"
         )
-
-    if not result:
-        raise HTTPException(status_code=404, details=f"User {user_id} does not exist.")
-
-    creatures = []
-    for creature in result:
-        creatures.append(
-            {
-                "name": creature["name"],
-                "id": creature["id"],
-                "type": creature["type"],
-                "affinity": creature["affinity"],
-                "is_adopted": creature["is_adopted"],
-                "stage": creature["stage"],
-            }
-        )
-    print(f"[get_creatures] User {user_id}'s creature list:", creatures)
-    return creatures
 
 
 @router.get("/{creature_id}/stats")
@@ -112,31 +114,31 @@ def get_creature_stats(user_id: int, creature_id: int):
                 .one_or_none()
             )
 
+        if not c_stats:
+            raise HTTPException(
+                status_code=404,
+                detail=f"User {user_id} and/or creature {creature_id} does not exist.",
+            )
+
+        info = {
+            "name": c_stats["name"],
+            "type": c_stats["type"],
+            "hunger": c_stats["hunger"],
+            "happiness": c_stats["happiness"],
+            "affinity": c_stats["affinity"],
+            "stage": c_stats["stage"],
+        }
+        print(
+            f"[get_creature_stats] Creature {creature_id} info for user {user_id}:",
+            info,
+        )
+        return info
+
     except Exception as e:
         print("[get_creature_stats] An unexpected error has occurred:", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve creature stats. Error: {e}"
         )
-
-    if not c_stats:
-        raise HTTPException(
-            status_code=404,
-            detail=f"User {user_id} and/or creature {creature_id} does not exist.",
-        )
-
-    info = {
-        "name": c_stats["name"],
-        "type": c_stats["type"],
-        "hunger": c_stats["hunger"],
-        "happiness": c_stats["happiness"],
-        "affinity": c_stats["affinity"],
-        "stage": c_stats["stage"],
-    }
-    print(
-        f"[get_creature_stats] Creature {creature_id} info for user {user_id}:",
-        info,
-    )
-    return info
 
 
 @router.post("/{creature_id}/feed/{treat_sku}")
@@ -307,19 +309,19 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 {"user": user_id, "sku": treat_sku},
             )
 
+        return {
+            "message": message,
+            "gold_earned": gold_earned,
+            "change_in_hunger": change_in_hunger,
+            "change_in_happiness": change_in_happiness,
+            "change_in_affinity": change_in_affinity,
+        }
+
     except Exception as e:
         print("[feed_creature] An unexpected error has occurred:", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to feed creature. Error: {e}"
         )
-
-    return {
-        "message": message,
-        "gold_earned": gold_earned,
-        "change_in_hunger": change_in_hunger,
-        "change_in_happiness": change_in_happiness,
-        "change_in_affinity": change_in_affinity,
-    }
 
 
 @router.post("/{creature_id}/play")
@@ -406,17 +408,17 @@ def play_with_creature(user_id: int, creature_id: int):
                 {"user": user_id},
             )
 
+        return {
+            "gold_earned": 2,
+            "affinity": affinity,
+            "happiness": happiness,
+        }
+
     except Exception as e:
         print("[play_with_creature] An unexpected error has occurred:", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to play with creature. Error: {e}"
         )
-
-    return {
-        "gold_earned": 2,
-        "affinity": affinity,
-        "happiness": happiness,
-    }
 
 
 @router.post("/{creature_id}/adopt")
@@ -449,42 +451,42 @@ def adopt_creature(user_id: int, creature_id: int):
                 .one_or_none()
             )
 
-        if not stats:
-            raise HTTPException(
-                status_code=404,
-                detail=f"User {user_id} and/or creature {creature_id} does not exist.",
-            )
-        if stats["is_adopted"]:
-            raise HTTPException(
-                status_code=409,
-                detail=f"{stats['name']} has already been adopted by user {user_id}.",
-            )
-        if stats["affinity"] < 100:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Affinity with {stats['name']} is not high enough! Have: {stats['affinity']}, Needed: 100",
+            if not stats:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} and/or creature {creature_id} does not exist.",
+                )
+            if stats["is_adopted"]:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"{stats['name']} has already been adopted by user {user_id}.",
+                )
+            if stats["affinity"] < 100:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Affinity with {stats['name']} is not high enough! Have: {stats['affinity']}, Needed: 100",
+                )
+
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    UPDATE user_creature_connection
+                    SET is_adopted = true
+                    WHERE users_id = :u_id
+                    AND creatures_id = :c_id
+                    """
+                ),
+                {"u_id": user_id, "c_id": creature_id},
             )
 
-        connection.execute(
-            sqlalchemy.text(
-                """
-                UPDATE user_creature_connection
-                SET is_adopted = true
-                WHERE users_id = :u_id
-                AND creatures_id = :c_id
-                """
-            ),
-            {"u_id": user_id, "c_id": creature_id},
-        )
+        print(f"User {user_id} has adopted {stats['name']}!")
+        return "OK"
 
     except Exception as e:
         print("[adopt_creature] An unexpected error has occurred:", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to adopt creature. Error: {e}"
         )
-
-    print(f"User {user_id} has adopted {stats['name']}!")
-    return "OK"
 
 
 @router.post("/breed")
@@ -597,19 +599,19 @@ def breed_creatures(user_id: int, new: NewCreature):
                 {"u_id": user_id, "c_id": id},
             )
 
+        return {
+            "name": new.name,
+            "id": id,
+            "type": new_type,
+            "fav_treat": fav,
+            "hated_treat": hated,
+        }
+
     except Exception as e:
         print("[breed_creatures] An unexpected error has occurred:", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to breed creatures. Error: {e}"
         )
-
-    return {
-        "name": new.name,
-        "id": id,
-        "type": new_type,
-        "fav_treat": fav,
-        "hated_treat": hated,
-    }
 
 
 @router.post("/{creature_id}/evolve")
@@ -679,10 +681,10 @@ def evolve_creature(user_id: int, creature_id: int):
                 {"c_id": creature_id},
             ).scalar_one()
 
+        return {"stage": stage}
+
     except Exception as e:
         print("[evolve_creature] An unexpected error has occurred:", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to evolve creature. Error: {e}"
         )
-
-    return {"stage": stage}
