@@ -49,8 +49,10 @@ def create_user(user: NewUser):
 
         return {"user_id": id}
 
+    except HTTPException as h:
+        raise h
     except Exception as e:
-        print("[create_user] An unexpected error has occurred:", e)
+        print("[create_user] An unexpected error has occurred:", str(e))
         raise HTTPException(
             status_code=500, detail=f"Failed to create user. Error: {e}"
         )
@@ -81,6 +83,9 @@ def delete_user(user_id: int):
             )
 
         return "OK"
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
         print("[delete_user] An unexpected error has occurred:", e)
@@ -146,6 +151,9 @@ def get_inventory(user_id: int):
             "treats": treats,
         }
 
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
         print("[get_inventory] An unexpected error has occurred:", e)
         raise HTTPException(
@@ -200,6 +208,9 @@ def get_adoptions(user_id: int):
         print(f"[get_adoptions] User {user_id}'s adoptions:", adoptions)
 
         return adoptions
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
         print("[get_adoptions] An unexpected error has occurred:", e)

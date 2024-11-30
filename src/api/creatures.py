@@ -60,6 +60,9 @@ def get_creatures(user_id: int):
         print(f"[get_creatures] User {user_id}'s creature list:", creatures)
         return creatures
 
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
         print("[get_creatures] An unexpected error has occurred:", e)
         raise HTTPException(
@@ -112,6 +115,9 @@ def get_creature_stats(user_id: int, creature_id: int):
             c_stats,
         )
         return c_stats
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
         print("[get_creature_stats] An unexpected error has occurred:", e)
@@ -296,6 +302,9 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
             "change_in_affinity": change_in_affinity,
         }
 
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
         print("[feed_creature] An unexpected error has occurred:", e)
         raise HTTPException(
@@ -393,6 +402,9 @@ def play_with_creature(user_id: int, creature_id: int):
             "happiness": happiness,
         }
 
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
         print("[play_with_creature] An unexpected error has occurred:", e)
         raise HTTPException(
@@ -460,6 +472,9 @@ def adopt_creature(user_id: int, creature_id: int):
 
         print(f"User {user_id} has adopted {stats['name']}!")
         return "OK"
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
         print("[adopt_creature] An unexpected error has occurred:", e)
@@ -586,6 +601,9 @@ def breed_creatures(user_id: int, new: NewCreature):
             "hated_treat": hated,
         }
 
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
         print("[breed_creatures] An unexpected error has occurred:", e)
         raise HTTPException(
@@ -661,6 +679,9 @@ def evolve_creature(user_id: int, creature_id: int):
             ).scalar_one()
 
         return {"stage": stage}
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
         print("[evolve_creature] An unexpected error has occurred:", e)
