@@ -52,16 +52,15 @@ def get_creatures(user_id: int):
                 .mappings()
                 .all()
             )
-            if not result:
-                raise HTTPException(
-                    status_code=404, details=f"User {user_id} does not exist."
-                )
 
     except Exception as e:
         print("[get_creatures] An unexpected error has occurred:", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve creatures. Error: {e}"
         )
+
+    if not result:
+        raise HTTPException(status_code=404, details=f"User {user_id} does not exist.")
 
     creatures = []
     for creature in result:
@@ -112,16 +111,17 @@ def get_creature_stats(user_id: int, creature_id: int):
                 .mappings()
                 .one_or_none()
             )
-            if not c_stats:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"User {user_id} and/or creature {creature_id} does not exist.",
-                )
 
     except Exception as e:
         print("[get_creature_stats] An unexpected error has occurred:", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve creature stats. Error: {e}"
+        )
+
+    if not c_stats:
+        raise HTTPException(
+            status_code=404,
+            detail=f"User {user_id} and/or creature {creature_id} does not exist.",
         )
 
     info = {
@@ -476,6 +476,7 @@ def adopt_creature(user_id: int, creature_id: int):
             ),
             {"u_id": user_id, "c_id": creature_id},
         )
+
     except Exception as e:
         print("[adopt_creature] An unexpected error has occurred:", e)
         raise HTTPException(
