@@ -32,13 +32,17 @@ def get_catalog():
             connection.execute(
                 sqlalchemy.text(
                     """
-                    SELECT sku, name, price, satiety 
+                    SELECT
+                        sku,
+                        name,
+                        price,
+                        satiety
                     FROM treats
                     """
                 )
             )
             .mappings()
-            .fetchall()
+            .all()
         )
 
     return treats
@@ -68,7 +72,8 @@ def purchase(purchase: Purchase):
                             t.sku,
                             t.price
                         FROM users u
-                        JOIN gold_view g ON g.user_id = u.id
+                        JOIN gold_view g
+                            ON g.user_id = u.id
                         CROSS JOIN treats t
                         WHERE u.id = :user_id
                             AND t.sku = :treat_sku
@@ -77,7 +82,7 @@ def purchase(purchase: Purchase):
                     {"user_id": purchase.user_id, "treat_sku": purchase.treat_sku},
                 )
                 .mappings()
-                .fetchone()
+                .one_or_none()
             )
 
             if request is None:
@@ -94,26 +99,24 @@ def purchase(purchase: Purchase):
                     detail=f"The cost of the treats, {cost} gold, is greater than the user's total gold.",
                 )
 
-            success = (
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                        INSERT INTO purchases (order_id, user_id, item_sku, quantity)            
-                        VALUES (:order_id, :user_id, :treat_sku, :quantity)
-                        ON CONFLICT (order_id) DO NOTHING
-                        RETURNING order_id
-                        """
-                    ),
-                    {
-                        "order_id": purchase.order_id,
-                        "user_id": purchase.user_id,
-                        "treat_sku": purchase.treat_sku,
-                        "quantity": purchase.quantity,
-                    },
-                )
+            success = connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO purchases (order_id, user_id, item_sku, quantity)            
+                    VALUES (:order_id, :user_id, :treat_sku, :quantity)
+                    ON CONFLICT (order_id) DO NOTHING
+                    RETURNING order_id
+                    """
+                ),
+                {
+                    "order_id": purchase.order_id,
+                    "user_id": purchase.user_id,
+                    "treat_sku": purchase.treat_sku,
+                    "quantity": purchase.quantity,
+                },
             )
 
-            if success == None:
+            if not success:
                 raise HTTPException(
                     status_code=409,
                     detail=f"Order {purchase.order_id} has already been completed.",
@@ -123,8 +126,8 @@ def purchase(purchase: Purchase):
                 sqlalchemy.text(
                     """
                     INSERT INTO user_gold (user_id, amount)
-                    VALUES (:user_id, -:amount);
-                    
+                    VALUES (:user_id, -1 * :amount);
+
                     INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
                     VALUES (:user_id, :treat_sku, :quantity)
                     """
