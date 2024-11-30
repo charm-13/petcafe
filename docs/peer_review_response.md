@@ -323,6 +323,24 @@ Expected output
 
 3. TurtleLover578 - Expected output
 
+### Issue #14
+#### 1. Purchase Example Flow
+Expected output.
+
+#### 3. User-Pet Interaction Example Flow
+Expected output.
+
+#### 4. User Viewing Example Flow
+Expected output.
+
+#### New Flow: See Play Stat Change Flow
+Expected output.
+
+#### New Flow: See Feed Stat Change Flow
+Expected output.
+
+#### User tries to play with invalid/non-existent creature
+Resolved with implementation of appropriate HTTP status codes.
 
 ## Product Ideas
 ### Issue #10
