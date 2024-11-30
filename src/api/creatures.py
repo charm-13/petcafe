@@ -83,10 +83,10 @@ def get_creature_stats(user_id: int, creature_id: int):
                         SELECT
                             name,
                             type,
-                            happiness,
                             hunger,
-                            stage,
-                            COALESCE(conn.affinity, 0) AS affinity
+                            happiness,
+                            COALESCE(conn.affinity, 0) AS affinity,
+                            stage
                         FROM creatures
                         JOIN users
                             ON users.id = :u_id
@@ -108,19 +108,11 @@ def get_creature_stats(user_id: int, creature_id: int):
                 detail=f"User {user_id} and/or creature {creature_id} does not exist.",
             )
 
-        info = {
-            "name": c_stats["name"],
-            "type": c_stats["type"],
-            "hunger": c_stats["hunger"],
-            "happiness": c_stats["happiness"],
-            "affinity": c_stats["affinity"],
-            "stage": c_stats["stage"],
-        }
         print(
             f"[get_creature_stats] Creature {creature_id} info for user {user_id}:",
-            info,
+            c_stats,
         )
-        return info
+        return c_stats
 
     except Exception as e:
         print("[get_creature_stats] An unexpected error has occurred:", e)
