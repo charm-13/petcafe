@@ -27,17 +27,17 @@ def get_creatures(user_id: int):
     """
     try:
         with db.engine.begin() as connection:
-            result = (
+            creatures = (
                 connection.execute(
                     sqlalchemy.text(
                         """
                         SELECT
                             name,
-                            type,
-                            stage,
                             creatures.id,
+                            type,
+                            COALESCE(conn.affinity, 0) AS affinity,
                             COALESCE(conn.is_adopted, false) AS is_adopted,
-                            COALESCE(conn.affinity, 0) AS affinity
+                            stage
                         FROM creatures
                         JOIN users
                             ON users.id = :user_id
@@ -53,23 +53,11 @@ def get_creatures(user_id: int):
                 .all()
             )
 
-        if not result:
+        if not creatures:
             raise HTTPException(
                 status_code=404, details=f"User {user_id} does not exist."
             )
 
-        creatures = []
-        for creature in result:
-            creatures.append(
-                {
-                    "name": creature["name"],
-                    "id": creature["id"],
-                    "type": creature["type"],
-                    "affinity": creature["affinity"],
-                    "is_adopted": creature["is_adopted"],
-                    "stage": creature["stage"],
-                }
-            )
         print(f"[get_creatures] User {user_id}'s creature list:", creatures)
         return creatures
 
