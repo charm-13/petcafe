@@ -37,11 +37,11 @@ _LGTM_ <br>yay :)
 #### Users
 /users/{user_id}/delete
 1. _I'm not sure you want to have this endpoint. It leaves the door open for a malicious user to iterate over id's and start deleting users. IF you do want to keep this functionality, then I'd suggest making your user id's in `/users/create` generate id's that are more unique and harder to guess._
-<br>We do want to keep this functionality. We implemented user authentication (users will have to sign up/in with a username and password). This endpoint is fixed to account for this possibility.
+<br>We do want to keep this functionality. We implemented user authentication (users will have to sign up with a username, email, and password). This endpoint is fixed to account for this possibility.
 
 /users/{user_id}/creatures/{creature_id}/feed/{treat_sku}
 1. _This endpoint is vulnerable to idempotency issues. Consider requiring the client to pass in a unique transaction id with each call and then check if that call has already been made before making any changes to data._
-<br>?
+<br>Given how our tables our structured, this would be very difficult to execute. Considering that and the limited time we have, we are not implementing this.
 
 ### Issue #17
 
