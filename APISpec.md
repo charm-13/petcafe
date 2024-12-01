@@ -176,7 +176,7 @@ Creates a new user with the specified username.
 }
 ```
 
-### 3.2. Delete User  `/users/{user_id}/delete` (POST)
+### 3.2. Delete User  `/users/{user_id` (DELETE)
 
 Deletes user profile.
 
@@ -213,7 +213,7 @@ Retrieves the gold and treat inventory of the user.
 }
 ```
 
-### 3.4. Get User Inventory `/users/{user_id}/adoptions` (GET)
+### 3.4. Get User Adoptions `/users/{user_id}/adoptions` (GET)
 
 Retrieves the name and stage for each creature the user has adopted.
 
