@@ -142,6 +142,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     sqlalchemy.text(
                         """
                         SELECT
+                            username,
                             sku,
                             satiety,
                             COALESCE(quantity, 0) AS qty
@@ -163,15 +164,17 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
             if not inventory:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {user_id} and/or treat {treat_sku} does not exist.",
+                    detail=f"User {user_id} and/or treat '{treat_sku}' does not exist.",
                 )
+
+            u_name = inventory["username"]
             if inventory["qty"] == 0:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"No '{treat_sku}'s found in inventory.",
+                    detail=f"You have no '{treat_sku}'s in your inventory!",
                 )
 
-            print(f"[feed_creature] User {user_id}'s inventory:", inventory)
+            print(f"[feed_creature] {u_name} (id {user_id})'s inventory:", inventory)
 
             stats = (
                 connection.execute(
@@ -209,10 +212,11 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     detail=f"Creature {creature_id} does not exist.",
                 )
 
-            if stats["hunger"] == stats["max_hunger"]:
+            c_name = stats["name"]
+            if stats["hunger"] >= stats["max_hunger"]:
                 raise HTTPException(
                     status_code=409,
-                    detail=f"{stats['name']} is too full right now! Please try again later.",
+                    detail=f"{c_name} (id {creature_id}) is too full right now! Please try again later.",
                 )
 
             hunger = stats["hunger"]
@@ -228,19 +232,19 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 gold_earned = 5
                 change_in_happiness = min(10, remaining_happiness)
                 change_in_affinity = min(5, remaining_affinity)
-                message = f"{stats['name']} devoured the treat!"
+                message = f"{c_name} devoured the treat!"
 
             elif treat_sku == stats["hated_treat"]:
                 gold_earned = 0
                 change_in_hunger = 0
                 change_in_happiness = max(-5, -1 * happiness)
                 change_in_affinity = max(-2, -1 * affinity)
-                message = f"{stats['name']} spat out the treat!"
+                message = f"{c_name} spat out the treat!"
             else:
                 gold_earned = 3
                 change_in_happiness = min(2, remaining_happiness)
                 change_in_affinity = min(2, remaining_affinity)
-                message = f"{stats['name']} ate the treat."
+                message = f"{c_name} ate the treat."
 
             connection.execute(
                 sqlalchemy.text(
@@ -326,6 +330,7 @@ def play_with_creature(user_id: int, creature_id: int):
                     sqlalchemy.text(
                         """
                         SELECT
+                            username,
                             name,
                             happiness,
                             e.max_happiness
@@ -350,15 +355,17 @@ def play_with_creature(user_id: int, creature_id: int):
                     detail=f"User {user_id} and/or creature {creature_id} does not exist.",
                 )
 
+            u_name = stats["username"]
+            c_name = stats["name"]
             print(
-                f"[play_with_creature] Creature {creature_id} info for user {user_id}:",
+                f"[play_with_creature] Stats of {c_name} (id {creature_id}) for user {u_name} (id {user_id}):",
                 stats,
             )
 
-            if stats["happiness"] == stats["max_happiness"]:
+            if stats["happiness"] >= stats["max_happiness"]:
                 raise HTTPException(
                     status_code=409,
-                    detail=f"{stats['name']} is very happy right now. Try playing with them again later.",
+                    detail=f"{c_name} (id {creature_id}) is very happy right now. Try again later.",
                 )
 
             affinity = connection.execute(
@@ -424,6 +431,7 @@ def adopt_creature(user_id: int, creature_id: int):
                     sqlalchemy.text(
                         """
                         SELECT
+                            username,
                             name,
                             COALESCE(is_adopted, false) AS is_adopted,
                             COALESCE(affinity, 0) AS affinity
@@ -447,15 +455,18 @@ def adopt_creature(user_id: int, creature_id: int):
                     status_code=404,
                     detail=f"User {user_id} and/or creature {creature_id} does not exist.",
                 )
+
+            u_name = stats["username"]
+            c_name = stats["name"]
             if stats["is_adopted"]:
                 raise HTTPException(
                     status_code=409,
-                    detail=f"{stats['name']} has already been adopted by user {user_id}.",
+                    detail=f"You have already adopted {c_name} (id {creature_id}).",
                 )
             if stats["affinity"] < 100:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"Affinity with {stats['name']} is not high enough! Have: {stats['affinity']}, Needed: 100",
+                    detail=f"Your affinity with {c_name} (id {creature_id}) isn't high enough to adopt them! Have: {stats['affinity']}, Needed: 100",
                 )
 
             connection.execute(
@@ -470,7 +481,7 @@ def adopt_creature(user_id: int, creature_id: int):
                 {"u_id": user_id, "c_id": creature_id},
             )
 
-        print(f"User {user_id} has adopted {stats['name']}!")
+        print(f"{u_name} (id {user_id}) has adopted {c_name} (id {creature_id})!")
         return "OK"
 
     except HTTPException as h:
@@ -538,7 +549,7 @@ def breed_creatures(user_id: int, new: NewCreature):
                     if not c["is_adopted"]:
                         raise HTTPException(
                             status_code=403,
-                            detail=f"{c['name']} (id {c['id']}) isn't adopted by user {user_id}!",
+                            detail=f"{c['name']} (id {c['id']}) needs to be adopted prior to breeding.",
                         )
 
             # determine new type
@@ -585,7 +596,7 @@ def breed_creatures(user_id: int, new: NewCreature):
             if not id:
                 raise HTTPException(
                     status_code=409,
-                    detail="A creature with the chosen name already exists!",
+                    detail=f"A creature with the name '{new.name}' already exists!",
                 )
 
             connection.execute(
@@ -655,30 +666,32 @@ def evolve_creature(user_id: int, creature_id: int):
                     status_code=404,
                     detail=f"User {user_id} and/or creature {creature_id} does not exist.",
                 )
+
+            c_name = stats["name"]
             if not stats["is_adopted"]:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"{stats['name']} must already be adopted before evolving.",
+                    detail=f"{c_name} (id {creature_id}) must be adopted before evolving.",
                 )
             if stats["stage"] == 3:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"{stats['name']} is already at the highest stage of evolution.",
+                    detail=f"{c_name} (id {creature_id}) is already at the highest stage of evolution.",
                 )
             if not stats["is_full"] or not stats["is_happy"]:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"{stats['name']} must be fully fed and satisfied before evolving!",
+                    detail=f"{c_name} (id {creature_id}) must be fully fed and happy before evolving.",
                 )
 
             stage = connection.execute(
                 sqlalchemy.text(
                     """
-                        UPDATE creatures
-                        SET stage = LEAST(3, stage + 1)
-                        WHERE id = :c_id
-                        RETURNING stage
-                        """
+                    UPDATE creatures
+                    SET stage = LEAST(3, stage + 1)
+                    WHERE id = :c_id
+                    RETURNING stage
+                    """
                 ),
                 {"c_id": creature_id},
             ).scalar_one()

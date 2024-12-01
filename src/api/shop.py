@@ -88,7 +88,7 @@ def purchase(purchase: Purchase):
             if request is None:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {purchase.user_id} and/or treat {purchase.treat_sku} does not exist.",
+                    detail=f"User {purchase.user_id} and/or treat '{purchase.treat_sku}' does not exist.",
                 )
 
             cost = request["price"] * purchase.quantity
@@ -96,13 +96,13 @@ def purchase(purchase: Purchase):
             if cost > request["gold"]:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"The cost of the treats, {cost} gold, is greater than the user's total gold.",
+                    detail=f"You do not have enough gold to purchase the treat. Have: {request['gold']}, Needed: {cost}",
                 )
 
             success = connection.execute(
                 sqlalchemy.text(
                     """
-                    INSERT INTO purchases (order_id, user_id, item_sku, quantity)            
+                    INSERT INTO purchases (order_id, user_id, item_sku, quantity)
                     VALUES (:order_id, :user_id, :treat_sku, :quantity)
                     ON CONFLICT (order_id) DO NOTHING
                     RETURNING order_id

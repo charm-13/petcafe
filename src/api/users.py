@@ -44,7 +44,7 @@ def create_user(user: NewUser):
         if not id:
             raise HTTPException(
                 status_code=409,
-                detail="That username already exists!",
+                detail=f"Username '{user.username}' is already taken!",
             )
 
         return {"user_id": id}
@@ -58,7 +58,7 @@ def create_user(user: NewUser):
         )
 
 
-@router.post("/{user_id}/delete")
+@router.delete("/{user_id}")
 def delete_user(user_id: int):
     """
     Deletes a user with the given id.
@@ -79,7 +79,7 @@ def delete_user(user_id: int):
         if not id_found:
             raise HTTPException(
                 status_code=404,
-                detail=f"User {user_id} doesn't exist.",
+                detail=f"User {user_id} does not exist.",
             )
 
         return "OK"
@@ -124,7 +124,7 @@ def get_inventory(user_id: int):
             if not u_gold:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {user_id} doesn't exist.",
+                    detail=f"User {user_id} does not exist.",
                 )
 
             treats = (
@@ -182,7 +182,7 @@ def get_adoptions(user_id: int):
             if not user:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {user_id} doesn't exist.",
+                    detail=f"User {user_id} does not exist.",
                 )
 
             adoptions = (
