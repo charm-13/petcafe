@@ -1,5 +1,5 @@
 import sqlalchemy
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from src import database as db
@@ -12,6 +12,12 @@ router = APIRouter(
 )
 
 
+class NewCreature(BaseModel):
+    creature_id_1: int
+    creature_id_2: int
+    name: str
+
+
 @router.get("/")
 def get_creatures(user_id: int):
     """
@@ -20,41 +26,48 @@ def get_creatures(user_id: int):
     """
     try:
         with db.engine.begin() as connection:
-            result = connection.execute(
-                sqlalchemy.text(
-                    """
-                    SELECT creatures.name, creatures.type, creatures.id, creatures.stage,
-                        COALESCE(user_creature_connection.is_adopted, false) AS status,
-                        COALESCE(user_creature_connection.affinity, 0) AS affinity
-                    FROM creatures
-                    LEFT JOIN user_creature_connection 
-                        ON creatures.id = user_creature_connection.creature_id
-                        AND user_id = :user_id
-                    ORDER BY creatures.name
-                """
-                ),
-                {"user_id": user_id},
-            ).mappings()
-
-        creatures = []
-
-        for creature in result:
-            creatures.append(
-                {
-                    "name": creature["name"],
-                    "id": creature["id"],
-                    "type": creature["type"],
-                    "affinity": creature["affinity"],
-                    "is_adopted": creature["status"],
-                    "stage": creature["stage"],
-                }
+            creatures = (
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                        SELECT
+                            name,
+                            creatures.id,
+                            type,
+                            COALESCE(conn.affinity, 0) AS affinity,
+                            COALESCE(conn.is_adopted, false) AS is_adopted,
+                            stage
+                        FROM creatures
+                        JOIN users
+                            ON users.id = :user_id
+                        LEFT JOIN user_creature_connection AS conn
+                            ON conn.creature_id = creatures.id
+                            AND conn.user_id = users.id
+                        ORDER BY creatures.name
+                        """
+                    ),
+                    {"user_id": user_id},
+                )
+                .mappings()
+                .all()
             )
 
+        if not creatures:
+            raise HTTPException(
+                status_code=404, detail=f"User {user_id} does not exist."
+            )
+
+        print(f"[get_creatures] User {user_id}'s creature list:", creatures)
         return creatures
 
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
-        print(f"An unexpected error has occurred: {e}")
-        return {"success": False, "error": str(e)}
+        print("[get_creatures] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve creatures. Error: {e}"
+        )
 
 
 @router.get("/{creature_id}/stats")
@@ -65,36 +78,52 @@ def get_creature_stats(user_id: int, creature_id: int):
     """
     try:
         with db.engine.begin() as connection:
-            c_stats = connection.execute(
-                sqlalchemy.text(
-                    """
-                    SELECT name, type, happiness, hunger, stage,
-                        COALESCE(connections.affinity, 0) AS affinity
-                    FROM creatures
-                    LEFT JOIN user_creature_connection AS connections
-                        ON connections.creature_id = creatures.id
-                        AND connections.user_id = :u_id
-                    WHERE creatures.id = :c_id
-                """
-                ),
-                {"u_id": user_id, "c_id": creature_id},
-            ).one()
+            c_stats = (
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                        SELECT
+                            name,
+                            type,
+                            hunger,
+                            happiness,
+                            COALESCE(conn.affinity, 0) AS affinity,
+                            stage
+                        FROM creatures
+                        JOIN users
+                            ON users.id = :u_id
+                            AND creatures.id = :c_id
+                        LEFT JOIN user_creature_connection AS conn
+                            ON conn.creature_id = creatures.id
+                            AND conn.user_id = users.id
+                        """
+                    ),
+                    {"u_id": user_id, "c_id": creature_id},
+                )
+                .mappings()
+                .one_or_none()
+            )
 
-        info = {
-            "name": c_stats.name,
-            "type": c_stats.type,
-            "hunger": c_stats.hunger,
-            "happiness": c_stats.happiness,
-            "affinity": c_stats.affinity,
-            "stage": c_stats.stage,
-        }
+        if not c_stats:
+            raise HTTPException(
+                status_code=404,
+                detail=f"User {user_id} and/or creature {creature_id} does not exist.",
+            )
 
-        print(f"Creature {creature_id} info for user {user_id}:", info)
-        return info
+        print(
+            f"[get_creature_stats] Creature {creature_id} info for user {user_id}:",
+            c_stats,
+        )
+        return c_stats
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
-        print(f"An unexpected error has occurred: {e}")
-        return {"success": False, "error": str(e)}
+        print("[get_creature_stats] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve creature stats. Error: {e}"
+        )
 
 
 @router.post("/{creature_id}/feed/{treat_sku}")
@@ -103,20 +132,8 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
     Feeds the specified creature a treat of the specified id. Response returns the gold earned
     and changes in stats of the creature affected by the action, which are dependent on the treat
     used to feed the creature. If the creature has max hunger level at the time of the call,
-    Feeds the specified creature a treat of the specified id. Response returns the gold earned
-    and changes in stats of the creature affected by the action, which are dependent on the treat
-    used to feed the creature. If the creature has max hunger level at the time of the call,
     the treat is not decremented from the user's inventory.
     """
-
-    feed_success = (
-        False  # If the creature ate the treat (only false if hunger maxed out)
-    )
-    gold_earned = 0  # 5 if favourite, 3 if normal, 0 if hated
-    change_in_hunger = 0  # 0 if treat is hated; else dependent on treat satiety
-    change_in_happiness = 0  # 10 if favorite, 5 if normal, -5 if hated
-    change_in_affinity = 0  # 5 if favorite, 2 if normal, -2 if hated
-    message = "Cannot feed this creature right now"
 
     try:
         with db.engine.begin() as connection:
@@ -124,151 +141,164 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                 connection.execute(
                     sqlalchemy.text(
                         """
-                    SELECT 
-                        u.id,
-                        treat_sku,
-                        satiety
-                    FROM users u
-                    JOIN (
-                        SELECT user_id, treat_sku, satiety, quantity
-                        FROM user_inventory_view
-                        JOIN treats 
-                            ON sku = treat_sku 
-                        ) AS inventory
-                        ON user_id = u.id
-                        AND treat_sku = :sku
-                        AND quantity > 0
-                    WHERE u.id = :id
-                """
+                        SELECT
+                            username,
+                            sku,
+                            satiety,
+                            COALESCE(quantity, 0) AS qty
+                        FROM treats
+                        JOIN users
+                            ON users.id = :id
+                            AND sku = :sku
+                        LEFT JOIN user_inventory_view AS inv
+                            ON inv.treat_sku = sku
+                            AND inv.user_id = users.id
+                        """
                     ),
                     {"sku": treat_sku, "id": user_id},
                 )
                 .mappings()
-                .fetchone()
+                .one_or_none()
             )
 
-            print(f"Inventory: {inventory}")
-
             if not inventory:
-                message = "This treat is not in your inventory"
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} and/or treat '{treat_sku}' does not exist.",
+                )
+
+            u_name = inventory["username"]
+            if inventory["qty"] == 0:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"You have no '{treat_sku}'s in your inventory!",
+                )
+
+            print(f"[feed_creature] {u_name} (id {user_id})'s inventory:", inventory)
 
             stats = (
                 connection.execute(
                     sqlalchemy.text(
                         """
-                    SELECT 
-                        fav_treat, 
-                        hated_treat, 
-                        name,
-                        happiness,
-                        max_happiness, 
-                        max_hunger, 
-                        hunger,
-                        COALESCE(user_creature_connection.affinity, 0) AS affinity
-                    FROM creatures 
-                    JOIN creature_types 
-                        ON creatures.type = creature_types.type 
-                        AND creatures.id = :creature
-                    JOIN evolution_stages e
-                        ON creatures.stage = e.stage
-                    LEFT JOIN user_creature_connection
-                        ON creatures.id = user_creature_connection.creature_id 
-                    AND user_id = :user_id
-                """
+                        SELECT
+                            name,
+                            fav_treat,
+                            hated_treat,
+                            happiness,
+                            max_happiness,
+                            max_hunger,
+                            hunger,
+                            COALESCE(conn.affinity, 0) AS affinity
+                        FROM creatures
+                        JOIN creature_types
+                            ON creatures.type = creature_types.type
+                            AND creatures.id = :creature
+                        JOIN evolution_stages e
+                            ON creatures.stage = e.stage
+                        LEFT JOIN user_creature_connection AS conn
+                            ON conn.creature_id = creatures.id
+                            AND conn.user_id = :user_id
+                        """
                     ),
                     {"creature": creature_id, "user_id": user_id},
                 )
                 .mappings()
-                .fetchone()
+                .one_or_none()
             )
 
-            if stats["hunger"] < stats["max_hunger"] and inventory:
-                feed_success = True
-                hunger = stats["hunger"]
-                happiness = stats["happiness"]
-                affinity = stats["affinity"]
-                remaining_hunger = stats["max_hunger"] - hunger
-                remaining_happiness = stats["max_happiness"] - happiness
-                remaining_affinity = 100 - affinity
-                change_in_hunger = (
-                    inventory["satiety"]
-                    if remaining_hunger >= inventory["satiety"]
-                    else remaining_hunger
+            if not stats:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Creature {creature_id} does not exist.",
                 )
 
-                if treat_sku == stats["fav_treat"]:
-                    gold_earned = 5
-                    change_in_happiness = min(10, remaining_happiness)
-                    change_in_affinity = min(5, remaining_affinity)
-                    message = f"{stats['name']} devoured the treat!"
+            c_name = stats["name"]
+            if stats["hunger"] >= stats["max_hunger"]:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"{c_name} (id {creature_id}) is too full right now! Please try again later.",
+                )
 
-                elif treat_sku == stats["hated_treat"]:
-                    change_in_happiness = max(-5, -1 * happiness)
-                    change_in_affinity = max(-2, -1 * affinity)
-                    change_in_hunger = 0
-                    message = f"{stats['name']} spat out the treat!"
+            hunger = stats["hunger"]
+            happiness = stats["happiness"]
+            affinity = stats["affinity"]
+            remaining_hunger = stats["max_hunger"] - hunger
+            remaining_happiness = stats["max_happiness"] - happiness
+            remaining_affinity = 100 - affinity
 
-                else:
-                    gold_earned = 3
-                    change_in_happiness = min(2, remaining_happiness)
-                    change_in_affinity = min(2, remaining_affinity)
-                    message = f"{stats['name']} ate the treat"
+            change_in_hunger = min(inventory["satiety"], remaining_hunger)
 
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                        INSERT INTO user_creature_connection (user_id, creature_id, affinity)
-                        VALUES (:user, :creature, :affinity)
-                        ON CONFLICT(user_id, creature_id)
-                        DO UPDATE 
-                        SET affinity = user_creature_connection.affinity + :affinity
+            if treat_sku == stats["fav_treat"]:
+                gold_earned = 5
+                change_in_happiness = min(10, remaining_happiness)
+                change_in_affinity = min(5, remaining_affinity)
+                message = f"{c_name} devoured the treat!"
+
+            elif treat_sku == stats["hated_treat"]:
+                gold_earned = 0
+                change_in_hunger = 0
+                change_in_happiness = max(-5, -1 * happiness)
+                change_in_affinity = max(-2, -1 * affinity)
+                message = f"{c_name} spat out the treat!"
+            else:
+                gold_earned = 3
+                change_in_happiness = min(2, remaining_happiness)
+                change_in_affinity = min(2, remaining_affinity)
+                message = f"{c_name} ate the treat."
+
+            connection.execute(
+                sqlalchemy.text(
                     """
-                    ),
-                    {
-                        "user": user_id,
-                        "creature": creature_id,
-                        "affinity": change_in_affinity,
-                    },
-                )
+                    INSERT INTO user_creature_connection (user_id, creature_id, affinity)
+                    VALUES (:user, :creature, :affinity)
+                    ON CONFLICT (user_id, creature_id) DO UPDATE
+                    SET affinity = user_creature_connection.affinity + :affinity
+                    """
+                ),
+                {
+                    "user": user_id,
+                    "creature": creature_id,
+                    "affinity": change_in_affinity,
+                },
+            )
 
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                            UPDATE creatures 
-                            SET happiness = happiness + :happiness,
-                            hunger = hunger + :hunger 
-                            WHERE id = :creature
-                        """
-                    ),
-                    {
-                        "happiness": change_in_happiness,
-                        "hunger": change_in_hunger,
-                        "creature": creature_id,
-                    },
-                )
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    UPDATE creatures
+                    SET happiness = happiness + :happiness,
+                        hunger = hunger + :hunger
+                    WHERE id = :creature
+                    """
+                ),
+                {
+                    "happiness": change_in_happiness,
+                    "hunger": change_in_hunger,
+                    "creature": creature_id,
+                },
+            )
 
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                            INSERT INTO user_gold (user_id, amount)
-                            VALUES (:user, :gold_earned)
-                        """
-                    ),
-                    {"gold_earned": gold_earned, "user": user_id},
-                )
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO user_gold (user_id, amount)
+                    VALUES (:user, :gold_earned)
+                    """
+                ),
+                {"gold_earned": gold_earned, "user": user_id},
+            )
 
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                            INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
-                            VALUES (:user, :sku, -1)
-                        """
-                    ),
-                    {"user": user_id, "sku": treat_sku},
-                )
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
+                    VALUES (:user, :sku, -1)
+                    """
+                ),
+                {"user": user_id, "sku": treat_sku},
+            )
 
         return {
-            "feed_success": feed_success,
             "message": message,
             "gold_earned": gold_earned,
             "change_in_hunger": change_in_hunger,
@@ -276,9 +306,14 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
             "change_in_affinity": change_in_affinity,
         }
 
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
-        print(f"An unexpected error has occurred: {e}")
-        return {"success": False, "error": str(e)}
+        print("[feed_creature] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to feed creature. Error: {e}"
+        )
 
 
 @router.post("/{creature_id}/play")
@@ -288,91 +323,100 @@ def play_with_creature(user_id: int, creature_id: int):
     Playing with a pet at max happiness does not earn the user any gold or affinity.
     """
 
-    played = False
-    gold_earned = 0
-    affinity_change = 0
-    happiness_change = 0
-
     try:
         with db.engine.begin() as connection:
             stats = (
                 connection.execute(
                     sqlalchemy.text(
                         """
-                    SELECT 
-                        happiness, e.max_happiness,
-                        COALESCE(user_creature_connection.affinity, 0) AS affinity
-                    FROM creatures 
-                    JOIN creature_types 
-                        ON creatures.type = creature_types.type AND creatures.id = :creature
-                    JOIN evolution_stages e
-                        ON creatures.stage = e.stage
-                    LEFT JOIN user_creature_connection 
-                        ON creatures.id = user_creature_connection.creature_id AND user_id = :user_id
-                """
+                        SELECT
+                            username,
+                            name,
+                            happiness,
+                            e.max_happiness
+                        FROM creatures
+                        JOIN creature_types
+                            ON creature_types.type = creatures.type
+                            AND creatures.id = :creature
+                        JOIN evolution_stages e
+                            ON creatures.stage = e.stage
+                        JOIN users
+                            ON users.id = :user_id
+                        """
                     ),
                     {"creature": creature_id, "user_id": user_id},
                 )
                 .mappings()
-                .fetchone()
+                .one_or_none()
+            )
+            if not stats:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} and/or creature {creature_id} does not exist.",
+                )
+
+            u_name = stats["username"]
+            c_name = stats["name"]
+            print(
+                f"[play_with_creature] Stats of {c_name} (id {creature_id}) for user {u_name} (id {user_id}):",
+                stats,
             )
 
-            print(f"Stats: {stats}")
-
-            if stats["happiness"] <= stats["max_happiness"] - 1:
-                happiness_change = 1
-                played = True
-                gold_earned = 2
-                affinity_change = 1
-
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                        INSERT INTO user_creature_connection (user_id, creature_id, affinity)
-                        VALUES (:user, :creature, :affinity)
-                        ON CONFLICT(user_id, creature_id)
-                        DO UPDATE 
-                        SET affinity = user_creature_connection.affinity + :affinity
-                    """
-                    ),
-                    {
-                        "user": user_id,
-                        "creature": creature_id,
-                        "affinity": affinity_change,
-                    },
+            if stats["happiness"] >= stats["max_happiness"]:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"{c_name} (id {creature_id}) is very happy right now. Try again later.",
                 )
 
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                        UPDATE creatures 
-                        SET happiness = happiness + :happiness_change 
-                        WHERE id = :creature
+            affinity = connection.execute(
+                sqlalchemy.text(
                     """
-                    ),
-                    {"happiness_change": happiness_change, "creature": creature_id},
-                )
+                    INSERT INTO user_creature_connection (user_id, creature_id, affinity)
+                    VALUES (:user, :creature, 1)
+                    ON CONFLICT (user_id, creature_id) DO UPDATE
+                    SET affinity = LEAST(100, user_creature_connection.affinity + 1)
+                    RETURNING affinity
+                    """
+                ),
+                {"user": user_id, "creature": creature_id},
+            ).scalar_one()
 
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                        INSERT INTO user_gold (user_id, amount)
-                        VALUES (:user, :gold_earned) 
+            happiness = connection.execute(
+                sqlalchemy.text(
                     """
-                    ),
-                    {"gold_earned": gold_earned, "user": user_id},
-                )
+                    UPDATE creatures
+                    SET happiness = happiness + 1
+                    WHERE id = :creature
+                    RETURNING happiness
+                    """
+                ),
+                {"creature": creature_id},
+            ).scalar_one()
+
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO user_gold (user_id, amount)
+                    VALUES (:user, 2)
+                    """
+                ),
+                {"user": user_id},
+            )
 
         return {
-            "play_success": played,
-            "gold_earned": gold_earned,
-            "change_in_affinity": affinity_change,
-            "change_in_happiness": happiness_change,
+            "gold_earned": 2,
+            "affinity": affinity,
+            "happiness": happiness,
         }
 
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
-        print(f"An unexpected error has occurred: {e}")
-        return {"success": False, "error": str(e)}
+        print("[play_with_creature] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to play with creature. Error: {e}"
+        )
 
 
 @router.post("/{creature_id}/adopt")
@@ -382,38 +426,72 @@ def adopt_creature(user_id: int, creature_id: int):
     """
     try:
         with db.engine.begin() as connection:
-            result = connection.execute(
+            stats = (
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                        SELECT
+                            username,
+                            name,
+                            COALESCE(is_adopted, false) AS is_adopted,
+                            COALESCE(affinity, 0) AS affinity
+                        FROM creatures
+                        JOIN USERS
+                            ON users.id = :u_id
+                            AND creatures.id = :c_id
+                        LEFT JOIN user_creature_connection AS conn
+                            ON conn.creature_id = creatures.id
+                            AND conn.user_id = users.id
+                        """
+                    ),
+                    {"u_id": user_id, "c_id": creature_id},
+                )
+                .mappings()
+                .one_or_none()
+            )
+
+            if not stats:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} and/or creature {creature_id} does not exist.",
+                )
+
+            u_name = stats["username"]
+            c_name = stats["name"]
+            if stats["is_adopted"]:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"You have already adopted {c_name} (id {creature_id}).",
+                )
+            if stats["affinity"] < 100:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Your affinity with {c_name} (id {creature_id}) isn't high enough to adopt them! Have: {stats['affinity']}, Needed: 100",
+                )
+
+            connection.execute(
                 sqlalchemy.text(
                     """
                     UPDATE user_creature_connection
-                        SET is_adopted = true
+                    SET is_adopted = true
                     WHERE user_id = :u_id
-                        AND creature_id = :c_id
-                        AND affinity = 100
-                    RETURNING is_adopted
+                    AND creature_id = :c_id
                     """
                 ),
                 {"u_id": user_id, "c_id": creature_id},
-            ).one_or_none()
-
-        if not result:
-            print(
-                f"Failure. User {user_id}'s affinity with creature id {creature_id} is not high enough for adoption."
             )
-            return {"success": False}
 
-        print(f"Success. User {user_id} has adopted creature with id {creature_id}!")
-        return {"success": True}
+        print(f"{u_name} (id {user_id}) has adopted {c_name} (id {creature_id})!")
+        return "OK"
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
-        print(f"An unexpected error has occurred: {e}")
-        return {"success": False, "error": str(e)}
-
-
-class NewCreature(BaseModel):
-    creature_id_1: int
-    creature_id_2: int
-    name: str
+        print("[adopt_creature] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to adopt creature. Error: {e}"
+        )
 
 
 @router.post("/breed")
@@ -421,22 +499,35 @@ def breed_creatures(user_id: int, new: NewCreature):
     """
     Breeds 2 creatures together. Creatures must be adopted by the user.
     """
-
     try:
+        if new.creature_id_1 == new.creature_id_2:
+            raise HTTPException(
+                status_code=403,
+                detail="You cannot breed a creature with itself.",
+            )
+
         with db.engine.begin() as connection:
             result = (
                 connection.execute(
                     sqlalchemy.text(
-                        """SELECT creatures.type, fav_treat, hated_treat
-                                    FROM creatures 
-                                    JOIN user_creature_connection 
-                                    ON creatures.id = creature_id 
-                                    JOIN creature_types 
-                                    ON creatures.type = creature_types.type
-                                    WHERE user_id = :uid 
-                                    AND (creatures.id = :cid1
-                                    OR creatures.id = :cid2)
-                                    AND is_adopted = TRUE"""
+                        """
+                        SELECT
+                            name,
+                            creatures.id,
+                            creatures.type,
+                            fav_treat,
+                            hated_treat,
+                            COALESCE(is_adopted, false) AS is_adopted
+                        FROM creatures
+                        JOIN creature_types
+                            ON creatures.type = creature_types.type
+                            AND (creatures.id = :cid1 OR creatures.id = :cid2)
+                        JOIN users
+                            ON users.id = :uid
+                        LEFT JOIN user_creature_connection AS conn
+                            ON conn.creature_id = creatures.id
+                            AND conn.user_id = users.id
+                        """
                     ),
                     {
                         "uid": user_id,
@@ -445,14 +536,21 @@ def breed_creatures(user_id: int, new: NewCreature):
                     },
                 )
                 .mappings()
-                .fetchall()
+                .all()
             )
 
-            if not result or len(result) != 2:
-                return {
-                    "success": False,
-                    "error": "One or both creatures are not adopted or do not exist",
-                }
+            if len(result) < 2:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} and/or one or both creatures do not exist.",
+                )
+            else:
+                for c in result:
+                    if not c["is_adopted"]:
+                        raise HTTPException(
+                            status_code=403,
+                            detail=f"{c['name']} (id {c['id']}) needs to be adopted prior to breeding.",
+                        )
 
             # determine new type
             type1 = result[0]["type"].split("_")
@@ -472,49 +570,61 @@ def breed_creatures(user_id: int, new: NewCreature):
             else:
                 fav, hated = fav_treat1, hated_treat1
 
+            connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO creature_types (type, fav_treat, hated_treat)
+                    VALUES (:new_type, :fav, :hated)
+                    ON CONFLICT (type) DO NOTHING
+                    """
+                ),
+                {"new_type": new_type, "fav": fav, "hated": hated},
+            )
+
             id = connection.execute(
                 sqlalchemy.text(
-                    """INSERT INTO creatures(name, type)
-                                                    VALUES (:name, :type) 
-                                                    ON CONFLICT (name)
-                                                    DO NOTHING
-                                                    RETURNING id"""
+                    """
+                    INSERT INTO creatures (name, type)
+                    VALUES (:name, :type)
+                    ON CONFLICT (name) DO NOTHING
+                    RETURNING id
+                    """
                 ),
                 {"name": new.name, "type": new_type},
             ).scalar_one_or_none()
 
             if not id:
-                return {"success": False, "error": "Name already exists"}
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"A creature with the name '{new.name}' already exists!",
+                )
 
             connection.execute(
                 sqlalchemy.text(
-                    """INSERT INTO creature_types(type, fav_treat, hated_treat)
-                                            VALUES (:new_type, :fav, :hated)
-                                            ON CONFLICT (type)
-                                            DO NOTHING"""
+                    """
+                    INSERT INTO user_creature_connection (user_id, creature_id, affinity, is_adopted)
+                    VALUES (:u_id, :c_id, 100, true)
+                    """
                 ),
-                {"new_type": new_type, "fav": fav, "hated": hated},
+                {"u_id": user_id, "c_id": id},
             )
 
-            connection.execute(
-                sqlalchemy.text(
-                    """INSERT INTO user_creature_connection(user_id, creature_id, affinity, is_adopted)
-                                            VALUES (:uid, :cid, 100, True)"""
-                ),
-                {"uid": user_id, "cid": id},
-            )
+        return {
+            "name": new.name,
+            "id": id,
+            "type": new_type,
+            "fav_treat": fav,
+            "hated_treat": hated,
+        }
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return {"error": str(e)}
-
-    return {
-        "name": new.name,
-        "id": id,
-        "type": new_type,
-        "fav_treat": fav,
-        "hated_treat": hated,
-    }
+        print("[breed_creatures] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to breed creatures. Error: {e}"
+        )
 
 
 @router.post("/{creature_id}/evolve")
@@ -524,77 +634,75 @@ def evolve_creature(user_id: int, creature_id: int):
     """
     try:
         with db.engine.begin() as connection:
-            status = (
+            stats = (
                 connection.execute(
                     sqlalchemy.text(
                         """
-                SELECT 
-                    creatures.stage, hunger, happiness, max_hunger, max_happiness,
-                    COALESCE(user_creature_connection.is_adopted, false) AS is_adopted
-                FROM creatures
-                LEFT JOIN user_creature_connection ON creature_id = creatures.id 
-                    AND user_id = :u_id
-                JOIN evolution_stages ON creatures.stage = evolution_stages.stage
-                WHERE creatures.id = :c_id
-            """
+                        SELECT
+                            name,
+                            creatures.stage,
+                            hunger = max_hunger AS is_full,
+                            happiness = max_happiness AS is_happy,
+                            COALESCE(conn.is_adopted, false) AS is_adopted
+                        FROM creatures
+                        JOIN users
+                            ON users.id = :u_id
+                            AND creatures.id = :c_id
+                        JOIN evolution_stages
+                            ON creatures.stage = evolution_stages.stage
+                        LEFT JOIN user_creature_connection AS conn
+                            ON conn.creature_id = creatures.id
+                            AND conn.user_id = users.id
+                        """
                     ),
                     {"u_id": user_id, "c_id": creature_id},
                 )
                 .mappings()
-                .fetchone()
+                .one_or_none()
             )
 
-            if not status:
-                return {
-                    "success": False,
-                    "error": f"Creature {creature_id} does not exist.",
-                }
-
-            if not status["is_adopted"]:
-                return {
-                    "success": False,
-                    "error": f"Creature {creature_id} must already be adopted before evolving.",
-                }
-
-            if status["stage"] == 3:
-                return {
-                    "success": False,
-                    "error": f"Creature {creature_id} is already at the highest stage.",
-                }
-
-            if (
-                status["hunger"] < status["max_hunger"]
-                or status["happiness"] < status["max_happiness"]
-            ):
-                return {
-                    "success": False,
-                    "error": f"Creature {creature_id} must have maximum stats before evolving.",
-                }
-
-            stage = (
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                UPDATE creatures
-                SET stage = stage + 1 
-                WHERE id = :c_id
-                RETURNING stage
-            """
-                    ),
-                    {"c_id": creature_id},
+            if not stats:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} and/or creature {creature_id} does not exist.",
                 )
-                .mappings()
-                .fetchone()
-            )
 
-            if not stage:
-                return {
-                    "success": False,
-                    "error": f"Unable to evolve creature {creature_id}",
-                }
+            c_name = stats["name"]
+            if not stats["is_adopted"]:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"{c_name} (id {creature_id}) must be adopted before evolving.",
+                )
+            if stats["stage"] == 3:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"{c_name} (id {creature_id}) is already at the highest stage of evolution.",
+                )
+            if not stats["is_full"] or not stats["is_happy"]:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"{c_name} (id {creature_id}) must be fully fed and happy before evolving.",
+                )
 
-        return stage
+            stage = connection.execute(
+                sqlalchemy.text(
+                    """
+                    UPDATE creatures
+                    SET stage = LEAST(3, stage + 1)
+                    WHERE id = :c_id
+                    RETURNING stage
+                    """
+                ),
+                {"c_id": creature_id},
+            ).scalar_one()
+
+        return {"stage": stage}
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return {"success": False, "error": str(e)}
+        print("[evolve_creature] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to evolve creature. Error: {e}"
+        )

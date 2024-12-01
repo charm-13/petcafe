@@ -88,12 +88,10 @@ Feeds the specified creature a treat of the specified id. Response returns the g
 
 ```json
 {
-    /* All 0 if pet is full */
-        "feed_success": "boolean", /* If the creature ate the treat (only false if hunger maxed out) */
-        "message": "string",
+        "message": "string", /* indicator of creature's favorability towards treat */
         "gold_earned": "integer", /* 0 if hated, 3 if normal, 5 if loved */
         "change_in_hunger": "integer", /* 0 if treat is hated; else dependent on treat satiety */
-        "change_in_happiness": "integer", /* 10 if favorite, 5 if normal, -5 if hated */
+        "change_in_happiness": "integer", /* 10 if favorite, 2 if normal, -5 if hated */
         "change_in_affinity": "integer",  /* 5 if favorite, 2 if normal, -2 if hated */
 }
 ```
@@ -105,10 +103,9 @@ Plays with the specified creature. Increases a creature's happiness and affinity
 **Response**:
 ```json
 {
-    "play_success": "boolean", /* If the play was successful, false if happiness and affinity maxed out*/
     "gold_earned": "integer", /* 2 gold */
-    "change_in_affinity": "integer", /* 1 affinity point */
-    "change_in_happiness": "integer" /* 1 happiness point */
+    "affinity": "integer", /* new affinity with creature */
+    "happiness": "integer" /* new happiness of creature */
 }
 ```
 ### 2.3 Adopt Creature `/users/{user_id}/creatures/{creature_id}/adopt` (POST)
@@ -118,9 +115,7 @@ Adopts a creature. User's affinity level with the specified creature must be 100
 **Response:**
 
 ```json
-{
-    "success": "boolean"
-}
+"OK"
 ```
 ### 2.4 Breed Creatures `/users/{user_id}/creatures/breed` (POST)
 
@@ -181,7 +176,7 @@ Creates a new user with the specified username.
 }
 ```
 
-### 3.2. Delete User  `/users/{user_id}/delete` (DELETE)
+### 3.2. Delete User  `/users/{user_id` (DELETE)
 
 Deletes user profile.
 
@@ -196,9 +191,7 @@ Deletes user profile.
 **Response**:
 
 ```json
-{
-    "success": "boolean"
-}
+"OK"
 ```
 
 ### 3.3. Get User Inventory `/users/{user_id}/inventory` (GET)
@@ -220,7 +213,7 @@ Retrieves the gold and treat inventory of the user.
 }
 ```
 
-### 3.4. Get User Inventory `/users/{user_id}/adoptions` (GET)
+### 3.4. Get User Adoptions `/users/{user_id}/adoptions` (GET)
 
 Retrieves the name and stage for each creature the user has adopted.
 

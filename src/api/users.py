@@ -1,5 +1,5 @@
 import sqlalchemy
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from src import database as db
@@ -23,53 +23,75 @@ def create_user(user: NewUser):
     """
     try:
         if len(user.username) < 5 or len(user.username) > 20:
-            return {
-                "success": False,
-                "error": "Username must be between 5 and 20 characters.",
-            }
+            raise HTTPException(
+                status_code=422,
+                detail="Username must be between 5 and 20 characters long.",
+            )
 
         with db.engine.begin() as connection:
-            id = (
-                connection.execute(
-                    sqlalchemy.text(
-                        """
-                        INSERT INTO users (username)
-                        VALUES (:username)
-                        ON CONFLICT (username)
-                        DO UPDATE
-                        SET username = excluded.username
-                        RETURNING id
-                        """
-                    ),
-                    {"username": user.username},
-                )
-                .one()
-                .id
+            id = connection.execute(
+                sqlalchemy.text(
+                    """
+                    INSERT INTO users (username)
+                    VALUES (:username)
+                    ON CONFLICT (username) DO NOTHING
+                    RETURNING id
+                    """
+                ),
+                {"username": user.username},
+            ).scalar_one_or_none()
+
+        if not id:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Username '{user.username}' is already taken!",
             )
 
         return {"user_id": id}
 
+    except HTTPException as h:
+        raise h
     except Exception as e:
-        print(f"An error occurred: {e}")
-        return {"success": False, "error": str(e)}
+        print("[create_user] An unexpected error has occurred:", str(e))
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create user. Error: {e}"
+        )
 
 
-@router.delete("/{user_id}/delete")
+@router.delete("/{user_id}")
 def delete_user(user_id: int):
     """
     Deletes a user with the given id.
     """
-    with db.engine.begin() as connection:
-        connection.execute(
-            sqlalchemy.text(
-                """
-                DELETE FROM users
-                WHERE id = :user_id
-                """
-            ),
-            {"user_id": user_id},
+    try:
+        with db.engine.begin() as connection:
+            id_found = connection.execute(
+                sqlalchemy.text(
+                    """
+                    DELETE FROM users
+                    WHERE id = :user_id
+                    RETURNING 1
+                    """
+                ),
+                {"user_id": user_id},
+            ).scalar_one_or_none()
+
+        if not id_found:
+            raise HTTPException(
+                status_code=404,
+                detail=f"User {user_id} does not exist.",
+            )
+
+        return "OK"
+
+    except HTTPException as h:
+        raise h
+
+    except Exception as e:
+        print("[delete_user] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete user. Error: {e}"
         )
-    return "OK"
 
 
 @router.get("/{user_id}/inventory")
@@ -80,48 +102,63 @@ def get_inventory(user_id: int):
     """
     try:
         with db.engine.begin() as connection:
-            inventory = connection.execute(
-                sqlalchemy.text(
-                    """
-                    SELECT
-                        u.username,
-                        g.gold,
-                        i.treat_sku,
-                        i.quantity
-                    FROM users u
-                    LEFT JOIN user_inventory_view i
-                        ON i.user_id = u.id
-                        AND i.quantity > 0
-                    LEFT JOIN gold_view g
-                        ON g.user_id = u.id
-                    WHERE u.id = :id
-                    """
-                ),
-                {"id": user_id},
-            ).mappings()
+            u_gold = (
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                        SELECT
+                            username,
+                            gold
+                        FROM users AS u
+                        JOIN gold_view AS g
+                            ON g.user_id = u.id
+                            AND u.id = :id
+                        """
+                    ),
+                    {"id": user_id},
+                )
+                .mappings()
+                .one_or_none()
+            )
 
-        treat_list = []
-        username = None
-        gold = None
-
-        for item in inventory:
-            if username is None and gold is None:
-                username = item["username"]
-                gold = item["gold"]
-
-            if item["treat_sku"]:
-                treat_list.append(
-                    {"username": item["treat_sku"], "quantity": item["quantity"]}
+            if not u_gold:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} does not exist.",
                 )
 
-        if username == None or gold == None:
-            return {"success": False, "error": f"User {user_id} does not exist."}
+            treats = (
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                        SELECT
+                            treat_sku AS sku,
+                            quantity
+                        FROM user_inventory_view
+                        WHERE user_id = :id
+                            AND quantity > 0
+                        """
+                    ),
+                    {"id": user_id},
+                )
+                .mappings()
+                .all()
+            )
 
-        return {"name": username, "gold": gold, "treats": treat_list}
+        return {
+            "name": u_gold["username"],
+            "gold": u_gold["gold"],
+            "treats": treats,
+        }
+
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
-        print(f"An unexpected error has occurred: {e}")
-        return {"success": False, "error": str(e)}
+        print("[get_inventory] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get user's inventory. Error: {e}"
+        )
 
 
 @router.get("/{user_id}/adoptions")
@@ -131,28 +168,53 @@ def get_adoptions(user_id: int):
     """
     try:
         with db.engine.begin() as connection:
+            user = connection.execute(
+                sqlalchemy.text(
+                    """
+                    SELECT 1
+                    FROM users
+                    WHERE users.id = :id
+                    """
+                ),
+                {"id": user_id},
+            ).scalar_one_or_none()
+
+            if not user:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} does not exist.",
+                )
+
             adoptions = (
                 connection.execute(
                     sqlalchemy.text(
                         """
-                        SELECT 
-                            name, stage
-                        FROM user_creature_connection u
-                        JOIN creatures c ON u.creature_id = c.id
-                        WHERE user_id = :id
-                            AND u.is_adopted = True
+                        SELECT
+                            name,
+                            stage
+                        FROM user_creature_connection AS conn
+                        JOIN creatures
+                            ON conn.creature_id = creatures.id
+                            AND conn.user_id = :id
+                            AND conn.is_adopted = True
                         """
                     ),
                     {"id": user_id},
                 )
                 .mappings()
-                .fetchall()
+                .all()
             )
 
-        print(f"Adoptions: {adoptions}")
+        print(f"[get_adoptions] User {user_id}'s adoptions:", adoptions)
 
         return adoptions
 
+    except HTTPException as h:
+        raise h
+
     except Exception as e:
-        print(f"An unexpected error has occurred: {e}")
-        return {"success": False, "error": str(e)}
+        print("[get_adoptions] An unexpected error has occurred:", e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get user's adopted creatures. Error: {e}",
+        )
