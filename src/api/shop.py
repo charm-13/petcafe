@@ -99,21 +99,25 @@ def purchase(purchase: Purchase):
                     detail=f"You do not have enough gold to purchase the treat. Have: {request['gold']}, Needed: {cost}",
                 )
 
-            success = connection.execute(
-                sqlalchemy.text(
-                    """
-                    INSERT INTO purchases (order_id, user_id, item_sku, quantity)
-                    VALUES (:order_id, :user_id, :treat_sku, :quantity)
-                    ON CONFLICT (order_id) DO NOTHING
-                    RETURNING order_id
-                    """
-                ),
-                {
-                    "order_id": purchase.order_id,
-                    "user_id": purchase.user_id,
-                    "treat_sku": purchase.treat_sku,
-                    "quantity": purchase.quantity,
-                },
+            success = (
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                        INSERT INTO purchases (order_id, user_id, item_sku, quantity)
+                        VALUES (:order_id, :user_id, :treat_sku, :quantity)
+                        ON CONFLICT (order_id) DO NOTHING
+                        RETURNING order_id
+                        """
+                    ),
+                    {
+                        "order_id": purchase.order_id,
+                        "user_id": purchase.user_id,
+                        "treat_sku": purchase.treat_sku,
+                        "quantity": purchase.quantity,
+                    },
+                )
+                .mappings()
+                .one_or_none()
             )
 
             if not success:
