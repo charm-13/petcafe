@@ -7,8 +7,7 @@ import logging
 import sys
 from starlette.middleware.cors import CORSMiddleware
 
-description = """
-placeholder"""
+description = "A backend service for an interactive fictional creature café where users can play with creatures, buy treats to feed creatures, adopt them, and more."
 
 app = FastAPI(
     title="Cute Creature Cafe",
