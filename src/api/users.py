@@ -1,6 +1,6 @@
 import sqlalchemy
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 from src import database as db
 from src.api import auth
@@ -8,60 +8,129 @@ from src.api import auth
 router = APIRouter(
     prefix="/users",
     tags=["users"],
-    dependencies=[Depends(auth.get_api_key)],
 )
 
 
 class NewUser(BaseModel):
+    email: EmailStr
     username: str
+    password: str
 
 
-@router.post("/create")
-def create_user(user: NewUser):
+class Login(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class PasswordUpdate(BaseModel):
+    email: EmailStr
+    username: str
+    new_password: str
+
+
+class UsernameUpdate(BaseModel):
+    email: EmailStr
+    password: str
+    new_username: str
+
+
+@router.post("/register")
+async def register(user: NewUser):
     """
-    Creates a new user with the given username. Returns the new user's id.
+    Registers a new user with the given email, username, and password.
+    Returns verification message and the user's id.
     """
+
+    if not 5 <= len(user.username) <= 25:
+        raise HTTPException(
+            status_code=422,
+            detail="Username must be between 5 and 25 characters.",
+        )
+
     try:
-        if len(user.username) < 5 or len(user.username) > 20:
-            raise HTTPException(
-                status_code=422,
-                detail="Username must be between 5 and 20 characters long.",
+        with db.engine.begin() as connection:
+            existing = (
+                connection.execute(
+                    sqlalchemy.text(
+                        """
+                        SELECT username
+                        FROM users
+                        WHERE username = :username
+                        """
+                    ),
+                    {"username": user.username},
+                )
+                .mappings()
+                .one_or_none()
             )
 
-        with db.engine.begin() as connection:
-            id = connection.execute(
+            if existing:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Username '{user.username}' is already taken.",
+                )
+
+            auth_response = await auth.supabase.auth.sign_up(
+                {"email": user.email, "password": user.password}
+            )
+
+            if not auth_response.user:
+                print(f"Failed to create user in Supabase")
+                raise HTTPException(
+                    status_code=400, detail="Failed to create user in Supabase"
+                )
+
+            connection.execute(
                 sqlalchemy.text(
                     """
-                    INSERT INTO users (username)
-                    VALUES (:username)
-                    ON CONFLICT (username) DO NOTHING
-                    RETURNING id
+                    INSERT INTO users (user_id, username)
+                    VALUES (:user_id, :username)
                     """
                 ),
-                {"username": user.username},
-            ).scalar_one_or_none()
-
-        if not id:
-            raise HTTPException(
-                status_code=409,
-                detail=f"Username '{user.username}' is already taken!",
+                {"user_id": auth_response.user.id, "username": user.username},
             )
 
-        return {"user_id": id}
+        return {
+            "message": "Registration successful. Check your email for verification.",
+            "user_id": auth_response.user.id,
+            "access_token": auth_response.session.access_token,
+        }
 
-    except HTTPException as h:
-        raise h
     except Exception as e:
-        print("[create_user] An unexpected error has occurred:", str(e))
+        if "auth_response" in locals() and auth_response.user:
+            try:
+                auth.supabase.auth.admin.delete_user(auth_response.user.id)
+            except Exception as cleanup_error:
+                print(f"[register] Failed to clean up auth user: {cleanup_error}")
+
         raise HTTPException(
             status_code=500, detail=f"Failed to create user. Error: {e}"
         )
 
 
-@router.delete("/{user_id}")
-def delete_user(user_id: int):
+@router.post("/login")
+async def login(credentials: Login):
     """
-    Deletes a user with the given id.
+    Logs in user with the given email and password.
+    """
+    try:
+        auth_response = auth.supabase.auth.sign_in_with_password(
+            {"email": credentials.email, "password": credentials.password}
+        )
+
+        return {
+            "user_id": auth_response.user.id,
+            "access_token": auth_response.session.access_token,
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+
+@router.delete("/remove")
+def delete_user(user=Depends(auth.get_current_user)):
+    """
+    Deletes a user with the given username.
     """
     try:
         with db.engine.begin() as connection:
@@ -73,16 +142,24 @@ def delete_user(user_id: int):
                     RETURNING 1
                     """
                 ),
-                {"user_id": user_id},
+                {"user_id": user.id},
             ).scalar_one_or_none()
 
-        if not id_found:
-            raise HTTPException(
-                status_code=404,
-                detail=f"User {user_id} does not exist.",
-            )
+            if not id_found:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User '{user.id}' does not exist.",
+                )
 
-        return "OK"
+            try:
+                auth.supabase.auth.admin.delete_user(user.id)
+            except Exception as cleanup_error:
+                print(f"[register] Failed to clean up auth user: {cleanup_error}")
+                raise HTTPException(
+                    status_code=500, detail=f"Failed to create user. Error: {cleanup_error}"
+                )
+
+        return {"message": "Successfully deleted."}
 
     except HTTPException as h:
         raise h
@@ -94,8 +171,8 @@ def delete_user(user_id: int):
         )
 
 
-@router.get("/{user_id}/inventory")
-def get_inventory(user_id: int):
+@router.get("/inventory")
+def get_inventory(user=Depends(auth.get_current_user)):
     """
     Provides the username, amount of gold, and treats in the inventory of the user
     with the given id.
@@ -112,10 +189,10 @@ def get_inventory(user_id: int):
                         FROM users AS u
                         JOIN gold_view AS g
                             ON g.user_id = u.id
-                            AND u.id = :id
+                            AND u.id = :user_id
                         """
                     ),
-                    {"id": user_id},
+                    {"user_id": user.id},
                 )
                 .mappings()
                 .one_or_none()
@@ -124,7 +201,7 @@ def get_inventory(user_id: int):
             if not u_gold:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {user_id} does not exist.",
+                    detail=f"User not found.",
                 )
 
             treats = (
@@ -135,11 +212,11 @@ def get_inventory(user_id: int):
                             treat_sku AS sku,
                             quantity
                         FROM user_inventory_view
-                        WHERE user_id = :id
+                        WHERE user_id = :user_id
                             AND quantity > 0
                         """
                     ),
-                    {"id": user_id},
+                    {"user_id": user.id},
                 )
                 .mappings()
                 .all()
@@ -161,30 +238,13 @@ def get_inventory(user_id: int):
         )
 
 
-@router.get("/{user_id}/adoptions")
-def get_adoptions(user_id: int):
+@router.get("/adoptions")
+def get_adoptions(user=Depends(auth.get_current_user)):
     """
     Provides the name and stage of each creature the user with the given id has adopted.
     """
     try:
         with db.engine.begin() as connection:
-            user = connection.execute(
-                sqlalchemy.text(
-                    """
-                    SELECT 1
-                    FROM users
-                    WHERE users.id = :id
-                    """
-                ),
-                {"id": user_id},
-            ).scalar_one_or_none()
-
-            if not user:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"User {user_id} does not exist.",
-                )
-
             adoptions = (
                 connection.execute(
                     sqlalchemy.text(
@@ -199,13 +259,13 @@ def get_adoptions(user_id: int):
                             AND conn.is_adopted = True
                         """
                     ),
-                    {"id": user_id},
+                    {"id": user.id},
                 )
                 .mappings()
                 .all()
             )
 
-        print(f"[get_adoptions] User {user_id}'s adoptions:", adoptions)
+        print(f"[get_adoptions] User {user.id}'s adoptions:", adoptions)
 
         return adoptions
 

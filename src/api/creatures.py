@@ -6,9 +6,8 @@ from src import database as db
 from src.api import auth
 
 router = APIRouter(
-    prefix="/users/{user_id}/creatures",
+    prefix="/creatures",
     tags=["creatures"],
-    dependencies=[Depends(auth.get_api_key)],
 )
 
 
@@ -19,7 +18,7 @@ class NewCreature(BaseModel):
 
 
 @router.get("/")
-def get_creatures(user_id: int):
+def get_creatures(user=Depends(auth.get_current_user)):
     """
     Retrieves the list of creatures available to interact with in the cafe
     as well as the affinity the requesting user has with each creature.
@@ -46,7 +45,7 @@ def get_creatures(user_id: int):
                         ORDER BY creatures.name
                         """
                     ),
-                    {"user_id": user_id},
+                    {"user_id": user.id},
                 )
                 .mappings()
                 .all()
@@ -54,10 +53,10 @@ def get_creatures(user_id: int):
 
         if not creatures:
             raise HTTPException(
-                status_code=404, detail=f"User {user_id} does not exist."
+                status_code=404, detail=f"User {user.id} does not exist."
             )
 
-        print(f"[get_creatures] User {user_id}'s creature list:", creatures)
+        print(f"[get_creatures] User {user.id}'s creature list:", creatures)
         return creatures
 
     except HTTPException as h:
@@ -71,7 +70,7 @@ def get_creatures(user_id: int):
 
 
 @router.get("/{creature_id}/stats")
-def get_creature_stats(user_id: int, creature_id: int):
+def get_creature_stats(creature_id: int, user=Depends(auth.get_current_user)):
     """
     Retrieves the stats of the specified creature, including their current hunger and happiness levels,
     and their affinity with the user.
@@ -98,7 +97,7 @@ def get_creature_stats(user_id: int, creature_id: int):
                             AND conn.user_id = users.id
                         """
                     ),
-                    {"u_id": user_id, "c_id": creature_id},
+                    {"u_id": user.id, "c_id": creature_id},
                 )
                 .mappings()
                 .one_or_none()
@@ -107,11 +106,11 @@ def get_creature_stats(user_id: int, creature_id: int):
         if not c_stats:
             raise HTTPException(
                 status_code=404,
-                detail=f"User {user_id} and/or creature {creature_id} does not exist.",
+                detail=f"User {user.id} and/or creature {creature_id} does not exist.",
             )
 
         print(
-            f"[get_creature_stats] Creature {creature_id} info for user {user_id}:",
+            f"[get_creature_stats] Creature {creature_id} info for user {user.id}:",
             c_stats,
         )
         return c_stats
@@ -127,7 +126,9 @@ def get_creature_stats(user_id: int, creature_id: int):
 
 
 @router.post("/{creature_id}/feed/{treat_sku}")
-def feed_creature(user_id: int, creature_id: int, treat_sku: str):
+def feed_creature(
+    creature_id: int, treat_sku: str, user=Depends(auth.get_current_user)
+):
     """
     Feeds the specified creature a treat of the specified id. Response returns the gold earned
     and changes in stats of the creature affected by the action, which are dependent on the treat
@@ -155,7 +156,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                             AND inv.user_id = users.id
                         """
                     ),
-                    {"sku": treat_sku, "id": user_id},
+                    {"sku": treat_sku, "id": user.id},
                 )
                 .mappings()
                 .one_or_none()
@@ -164,7 +165,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
             if not inventory:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {user_id} and/or treat '{treat_sku}' does not exist.",
+                    detail=f"User {user.id} and/or treat '{treat_sku}' does not exist.",
                 )
 
             u_name = inventory["username"]
@@ -174,7 +175,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     detail=f"You have no '{treat_sku}'s in your inventory!",
                 )
 
-            print(f"[feed_creature] {u_name} (id {user_id})'s inventory:", inventory)
+            print(f"[feed_creature] {u_name} (id {user.id})'s inventory:", inventory)
 
             stats = (
                 connection.execute(
@@ -200,7 +201,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                             AND conn.user_id = :user_id
                         """
                     ),
-                    {"creature": creature_id, "user_id": user_id},
+                    {"creature": creature_id, "user_id": user.id},
                 )
                 .mappings()
                 .one_or_none()
@@ -256,7 +257,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     """
                 ),
                 {
-                    "user": user_id,
+                    "user": user.id,
                     "creature": creature_id,
                     "affinity": change_in_affinity,
                 },
@@ -285,7 +286,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     VALUES (:user, :gold_earned)
                     """
                 ),
-                {"gold_earned": gold_earned, "user": user_id},
+                {"gold_earned": gold_earned, "user": user.id},
             )
 
             connection.execute(
@@ -295,7 +296,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
                     VALUES (:user, :sku, -1)
                     """
                 ),
-                {"user": user_id, "sku": treat_sku},
+                {"user": user.id, "sku": treat_sku},
             )
 
         return {
@@ -317,7 +318,7 @@ def feed_creature(user_id: int, creature_id: int, treat_sku: str):
 
 
 @router.post("/{creature_id}/play")
-def play_with_creature(user_id: int, creature_id: int):
+def play_with_creature(creature_id: int, user=Depends(auth.get_current_user)):
     """
     Plays with the specified creature. Increases a creature's happiness and affinity with user.
     Playing with a pet at max happiness does not earn the user any gold or affinity.
@@ -344,7 +345,7 @@ def play_with_creature(user_id: int, creature_id: int):
                             ON users.id = :user_id
                         """
                     ),
-                    {"creature": creature_id, "user_id": user_id},
+                    {"creature": creature_id, "user_id": user.id},
                 )
                 .mappings()
                 .one_or_none()
@@ -352,13 +353,13 @@ def play_with_creature(user_id: int, creature_id: int):
             if not stats:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {user_id} and/or creature {creature_id} does not exist.",
+                    detail=f"User {user.id} and/or creature {creature_id} does not exist.",
                 )
 
             u_name = stats["username"]
             c_name = stats["name"]
             print(
-                f"[play_with_creature] Stats of {c_name} (id {creature_id}) for user {u_name} (id {user_id}):",
+                f"[play_with_creature] Stats of {c_name} (id {creature_id}) for user {u_name} (id {user.id}):",
                 stats,
             )
 
@@ -378,7 +379,7 @@ def play_with_creature(user_id: int, creature_id: int):
                     RETURNING affinity
                     """
                 ),
-                {"user": user_id, "creature": creature_id},
+                {"user": user.id, "creature": creature_id},
             ).scalar_one()
 
             happiness = connection.execute(
@@ -400,7 +401,7 @@ def play_with_creature(user_id: int, creature_id: int):
                     VALUES (:user, 2)
                     """
                 ),
-                {"user": user_id},
+                {"user": user.id},
             )
 
         return {
@@ -420,7 +421,7 @@ def play_with_creature(user_id: int, creature_id: int):
 
 
 @router.post("/{creature_id}/adopt")
-def adopt_creature(user_id: int, creature_id: int):
+def adopt_creature(creature_id: int, user=Depends(auth.get_current_user)):
     """
     Adopts a creature. User's affinity level with the specified creature must be 100.
     """
@@ -444,7 +445,7 @@ def adopt_creature(user_id: int, creature_id: int):
                             AND conn.user_id = users.id
                         """
                     ),
-                    {"u_id": user_id, "c_id": creature_id},
+                    {"u_id": user.id, "c_id": creature_id},
                 )
                 .mappings()
                 .one_or_none()
@@ -453,7 +454,7 @@ def adopt_creature(user_id: int, creature_id: int):
             if not stats:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {user_id} and/or creature {creature_id} does not exist.",
+                    detail=f"User {user.id} and/or creature {creature_id} does not exist.",
                 )
 
             u_name = stats["username"]
@@ -478,10 +479,10 @@ def adopt_creature(user_id: int, creature_id: int):
                     AND creature_id = :c_id
                     """
                 ),
-                {"u_id": user_id, "c_id": creature_id},
+                {"u_id": user.id, "c_id": creature_id},
             )
 
-        print(f"{u_name} (id {user_id}) has adopted {c_name} (id {creature_id})!")
+        print(f"{u_name} (id {user.id}) has adopted {c_name} (id {creature_id})!")
         return "OK"
 
     except HTTPException as h:
@@ -495,7 +496,7 @@ def adopt_creature(user_id: int, creature_id: int):
 
 
 @router.post("/breed")
-def breed_creatures(user_id: int, new: NewCreature):
+def breed_creatures(new: NewCreature, user=Depends(auth.get_current_user)):
     """
     Breeds 2 creatures together. Creatures must be adopted by the user.
     """
@@ -530,7 +531,7 @@ def breed_creatures(user_id: int, new: NewCreature):
                         """
                     ),
                     {
-                        "uid": user_id,
+                        "uid": user.id,
                         "cid1": new.creature_id_1,
                         "cid2": new.creature_id_2,
                     },
@@ -542,7 +543,7 @@ def breed_creatures(user_id: int, new: NewCreature):
             if len(result) < 2:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {user_id} and/or one or both creatures do not exist.",
+                    detail=f"User {user.id} and/or one or both creatures do not exist.",
                 )
             else:
                 for c in result:
@@ -606,7 +607,7 @@ def breed_creatures(user_id: int, new: NewCreature):
                     VALUES (:u_id, :c_id, 100, true)
                     """
                 ),
-                {"u_id": user_id, "c_id": id},
+                {"u_id": user.id, "c_id": id},
             )
 
         return {
@@ -628,7 +629,7 @@ def breed_creatures(user_id: int, new: NewCreature):
 
 
 @router.post("/{creature_id}/evolve")
-def evolve_creature(user_id: int, creature_id: int):
+def evolve_creature(creature_id: int, user=Depends(auth.get_current_user)):
     """
     Evolves a creature to the next stage.
     """
@@ -655,7 +656,7 @@ def evolve_creature(user_id: int, creature_id: int):
                             AND conn.user_id = users.id
                         """
                     ),
-                    {"u_id": user_id, "c_id": creature_id},
+                    {"u_id": user.id, "c_id": creature_id},
                 )
                 .mappings()
                 .one_or_none()
@@ -664,7 +665,7 @@ def evolve_creature(user_id: int, creature_id: int):
             if not stats:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {user_id} and/or creature {creature_id} does not exist.",
+                    detail=f"User {user.id} and/or creature {creature_id} does not exist.",
                 )
 
             c_name = stats["name"]

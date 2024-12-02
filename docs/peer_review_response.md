@@ -16,7 +16,7 @@
 #### Carts
 /carts/
 1. _This endpoint does not have to require the user to pass in a username. Backend should be able to derive username from just the user_id. But username value doesn't seem to be necessary for your code regardless._
-<br>This is true. We removed username as a required field.
+<br>We are now using username in place of user_id.
 2. _This endpoint is vulnerable to idempotency issues. Consider requiring the client to pass in a unique transaction id with each call and then check if that call has already been made before making any changes to data._
 <br>The new purchasing endpoint now takes in an order id.
 3. _Every endpoint except this one that requires a user_id takes the user_id in the URL. This endpoint takes it in the text box. Consider making it take the user_id in the URL for your endpoints to be more consistent with one another._
@@ -37,7 +37,7 @@ _LGTM_ <br>yay :)
 #### Users
 /users/{user_id}/delete
 1. _I'm not sure you want to have this endpoint. It leaves the door open for a malicious user to iterate over id's and start deleting users. IF you do want to keep this functionality, then I'd suggest making your user id's in `/users/create` generate id's that are more unique and harder to guess._
-<br>We do want to keep this functionality. We implemented user authentication (users will have to sign up/in with a username and password). This endpoint is fixed to account for this possibility.
+<br>We do want to keep this functionality. We implemented user authentication (users will have to sign up/in with an email, username, and password). This endpoint is fixed to account for this possibility.
 
 /users/{user_id}/creatures/{creature_id}/feed/{treat_sku}
 1. _This endpoint is vulnerable to idempotency issues. Consider requiring the client to pass in a unique transaction id with each call and then check if that call has already been made before making any changes to data._
@@ -61,7 +61,7 @@ _LGTM_ <br>yay :)
 <br>We added a message to feed to indicate what happened with the treat. With play, the only time success will be false is when happiness is maxed out.
 
 6. _Currently, it doesn't seem like username is being used for anything after being created._
-<br>Username is now used for user authentication
+<br>Username is now used in place of uder_id in multiple endpoints.
 
 7. _It would be a good idea to specify that POST /carts/{cart_id}/checkout should only be called once for a specific cart. Since there would no need to keep the cart around unless you want to add an order history for all users._
 <br>We are changing the logic for cart checkouts to fix this
@@ -242,7 +242,7 @@ stats = connection.execute(sqlalchemy.text("""SELECT happiness, COALESCE(user_cr
 <br>We are trying to use a formatting convention for our queries, which means that it might remain a multi line query 
 
 2. _create_user() Can accept an empty string ("") as a username. Which doesn't seem to affect anything right now, but you should keep that in mind if you want to implement anything using the username in the future. So it would be a good idea to come up with some guidelines for creating a username._
-<br>Resolved, username now has to be between 5 and 20 characters
+<br>Resolved, username now has to be between 5 and 25 characters
 
 #### More general comments
 _You could move all your BaseModel (i.e NewUser and CartItem) Classes to the top of each file to improve readability._
