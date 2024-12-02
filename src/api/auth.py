@@ -1,20 +1,29 @@
-from fastapi import Security, HTTPException, status, Request
-from fastapi.security.api_key import APIKeyHeader
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from supabase import create_client, Client
 import os
 import dotenv
 
 dotenv.load_dotenv()
 
-api_keys = []
+url: str = os.environ.get("SUPABASE_API_URL")
 
-api_keys.append(os.environ.get("API_KEY"))
-api_key_header = APIKeyHeader(name="access_token", auto_error=False)
+key: str = os.environ.get("SUPABASE_ANON_KEY")
+supabase: Client = create_client(url, key)
 
+adminkey: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+adminsupabase: Client = create_client(url, adminkey)
 
-async def get_api_key(request: Request, api_key_header: str = Security(api_key_header)):
-    if api_key_header in api_keys:
-        return api_key_header
-    else:
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
+):
+    try:
+        user = supabase.auth.get_user(credentials.credentials)
+        return user.user
+
+    except Exception:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Forbidden"
+            status_code=401,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )

@@ -27,7 +27,6 @@ Creates a new cart for a specific user.
 
 ```json
 {
-  "user_id": "integer",
   "order_id": "integer",
   "treat_sku": "string",
   "quantity": "integer"
@@ -44,7 +43,7 @@ Creates a new cart for a specific user.
 
 ## 2. Creature Functions
 
-### 2.1. Get Creatures `/users/{user_id}/creatures` (GET)
+### 2.1. Get Creatures `/creatures` (GET)
 
 Retrieves the list of creatures available to interact with in the cafe.
 
@@ -63,7 +62,7 @@ Retrieves the list of creatures available to interact with in the cafe.
 ]
 ```
 
-### 2.2. Get Creature Stats `/users/{user_id}/creatures/{creature_id}/stats` (GET)
+### 2.2. Get Creature Stats `/creatures/{creature_id}/stats` (GET)
 
 Retrieves the stats of the specified creature, including their current hunger and happiness levels, and their affinity with the user.
 
@@ -80,7 +79,7 @@ Retrieves the stats of the specified creature, including their current hunger an
 }
 ```
 
-### 2.3. Feed Creature `/users/{user_id}/creatures/{creature_id}/feed/{treat_id}` (POST)
+### 2.3. Feed Creature `/creatures/{creature_id}/feed/{treat_id}` (POST)
 
 Feeds the specified creature a treat of the specified id. Response returns the gold earned and changes in stats of the creature affected by the action, which are dependent on the treat used to feed the creature. If the creature has max hunger level at the time of the call, the treat is not decremented from the user's inventory.
 
@@ -96,7 +95,7 @@ Feeds the specified creature a treat of the specified id. Response returns the g
 }
 ```
 
-### 2.2. Play with Creature `/users/{user_id}/creatures/{creature_id}/play` (POST)
+### 2.2. Play with Creature `/creatures/{creature_id}/play` (POST)
 
 Plays with the specified creature. Increases a creature's happiness and affinity with user. Playing with a pet at max happiness does not earn the user any gold or affinity.
 
@@ -108,7 +107,7 @@ Plays with the specified creature. Increases a creature's happiness and affinity
     "happiness": "integer" /* new happiness of creature */
 }
 ```
-### 2.3 Adopt Creature `/users/{user_id}/creatures/{creature_id}/adopt` (POST)
+### 2.3 Adopt Creature `/creatures/{creature_id}/adopt` (POST)
 
 Adopts a creature. User's affinity level with the specified creature must be 100.
 
@@ -117,7 +116,7 @@ Adopts a creature. User's affinity level with the specified creature must be 100
 ```json
 "OK"
 ```
-### 2.4 Breed Creatures `/users/{user_id}/creatures/breed` (POST)
+### 2.4 Breed Creatures `/creatures/breed` (POST)
 
 Breeds 2 creatures together. Creatures must be adopted by the user. Name corresponds to the name for the new creature.
 
@@ -142,7 +141,7 @@ Breeds 2 creatures together. Creatures must be adopted by the user. Name corresp
     "hated_treat": "string"
 }
 ```
-### 2.5 Evolve Creatures `/users/{user_id}/creatures/{creature_id}/evolve` (POST)
+### 2.5 Evolve Creatures `/creatures/{creature_id}/evolve` (POST)
 
 Each creature can be 1 of 3 stages. This evolves a creature to the next stage. 
 
@@ -156,15 +155,17 @@ Each creature can be 1 of 3 stages. This evolves a creature to the next stage.
 
 ## 3. User Functions
 
-### 3.1. Create User  `/users/create` (POST)
+### 3.1. User Registration  `/users/register` (POST)
 
-Creates a new user with the specified username.
+Creates a new user with the given email, username, and password.
 
 **Request**:
 
 ```json
 {
-  "username": "string"
+  "email": "user@example.com", 
+  "username": "string",
+  "password": "string"
 }
 ```
 
@@ -172,29 +173,47 @@ Creates a new user with the specified username.
 
 ```json
 {
-    "user_id": "integer"
+    "message": "string", /* Includes registration success and will let the user know if they need to verify their email before logging in. */
+    "user_id": "uuid",
+    "access_token": "string" /* Will be empty if the user needs to verify their email */
 }
 ```
 
-### 3.2. Delete User  `/users/{user_id` (DELETE)
+### 3.1. User Login  `/users/register` (POST)
+
+Logs in user with the given email and password.
+
+**Request**:
+
+```json
+{
+  "email": "user@example.com", /* example@example.com */
+  "password": "string"
+}
+```
+
+**Response**:
+
+```json
+{
+    "user_id": "uuid",
+    "access_token": "string" /* unique to each user and each session */ 
+}
+```
+
+### 3.3. Delete User  `/users/remove` (DELETE)
 
 Deletes user profile.
 
-**Request**:
-
-```json
-{
-  "user_id": "integer"
-}
-```
-
 **Response**:
 
 ```json
-"OK"
+{
+    "message": "string"
+}
 ```
 
-### 3.3. Get User Inventory `/users/{user_id}/inventory` (GET)
+### 3.4. Get User Inventory `/users/inventory` (GET)
 
 Retrieves the gold and treat inventory of the user.
 
@@ -213,7 +232,7 @@ Retrieves the gold and treat inventory of the user.
 }
 ```
 
-### 3.4. Get User Adoptions `/users/{user_id}/adoptions` (GET)
+### 3.5. Get User Adoptions `/users/adoptions` (GET)
 
 Retrieves the name and stage for each creature the user has adopted.
 
@@ -222,7 +241,7 @@ Retrieves the name and stage for each creature the user has adopted.
 ```json
 [
     {
-    "name": "string",
+    "name": "string", /* name of the creature */
     "stage": "integer" /* 1, 2, or 3 */
     },
 ]

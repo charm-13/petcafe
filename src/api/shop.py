@@ -9,12 +9,11 @@ from src.api import auth
 router = APIRouter(
     prefix="/shop",
     tags=["shop"],
-    dependencies=[Depends(auth.get_api_key)],
+    dependencies=[Depends(auth.get_current_user)],
 )
 
 
 class Purchase(BaseModel):
-    user_id: int
     order_id: int
     treat_sku: str
     quantity: int
@@ -49,7 +48,7 @@ def get_catalog():
 
 
 @router.post("/purchase")
-def purchase(purchase: Purchase):
+def purchase(purchase: Purchase, user=Depends(auth.get_current_user)):
     """
     Handles user purchasing a treat from the cafe.
     """
@@ -79,7 +78,7 @@ def purchase(purchase: Purchase):
                             AND t.sku = :treat_sku
                         """
                     ),
-                    {"user_id": purchase.user_id, "treat_sku": purchase.treat_sku},
+                    {"user_id": user.id, "treat_sku": purchase.treat_sku},
                 )
                 .mappings()
                 .one_or_none()
@@ -88,7 +87,7 @@ def purchase(purchase: Purchase):
             if request is None:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"User {purchase.user_id} and/or treat '{purchase.treat_sku}' does not exist.",
+                    detail=f"User {user.id} and/or treat '{purchase.treat_sku}' does not exist.",
                 )
 
             cost = request["price"] * purchase.quantity
@@ -111,7 +110,7 @@ def purchase(purchase: Purchase):
                     ),
                     {
                         "order_id": purchase.order_id,
-                        "user_id": purchase.user_id,
+                        "user_id": user.id,
                         "treat_sku": purchase.treat_sku,
                         "quantity": purchase.quantity,
                     },
@@ -132,12 +131,12 @@ def purchase(purchase: Purchase):
                     INSERT INTO user_gold (user_id, amount)
                     VALUES (:user_id, -1 * :amount);
 
-                    INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
+                    INSERT INTO users_inventory (user_id, treat_sku, quantity)
                     VALUES (:user_id, :treat_sku, :quantity)
                     """
                 ),
                 {
-                    "user_id": purchase.user_id,
+                    "user_id": user.id,
                     "amount": cost,
                     "treat_sku": purchase.treat_sku,
                     "quantity": purchase.quantity,
