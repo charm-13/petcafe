@@ -292,7 +292,7 @@ def feed_creature(
             connection.execute(
                 sqlalchemy.text(
                     """
-                    INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
+                    INSERT INTO users_inventory (user_id, treat_sku, quantity)
                     VALUES (:user, :sku, -1)
                     """
                 ),

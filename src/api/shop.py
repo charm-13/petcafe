@@ -131,7 +131,7 @@ def purchase(purchase: Purchase, user=Depends(auth.get_current_user)):
                     INSERT INTO user_gold (user_id, amount)
                     VALUES (:user_id, -1 * :amount);
 
-                    INSERT INTO users_treat_inventory (user_id, treat_sku, quantity)
+                    INSERT INTO users_inventory (user_id, treat_sku, quantity)
                     VALUES (:user_id, :treat_sku, :quantity)
                     """
                 ),
