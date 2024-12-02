@@ -6,12 +6,12 @@ import dotenv
 
 dotenv.load_dotenv()
 
-url: str = os.environ.get("SUPABASE_URL")
+url: str = os.environ.get("SUPABASE_API_URL")
 
-key: str = os.environ.get("SUPABASE_KEY")
+key: str = os.environ.get("SUPABASE_ANON_KEY")
 supabase: Client = create_client(url, key)
 
-adminkey: str = os.environ.get("SUPABASE_ADMIN_KEY")
+adminkey: str = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 adminsupabase: Client = create_client(url, adminkey)
 
 async def get_current_user(
