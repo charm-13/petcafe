@@ -20,8 +20,8 @@ class NewCreature(BaseModel):
 @router.get("/")
 def get_creatures(user=Depends(auth.get_current_user)):
     """
-    Retrieves the list of creatures available to interact with in the cafe
-    as well as the affinity the requesting user has with each creature.
+    Retrieves the list of creatures available to interact with in the cafe, specifying
+    its name, type, affinity with the requesting user, adoption status and evolution stage
     """
     try:
         with db.engine.begin() as connection:
@@ -73,7 +73,7 @@ def get_creatures(user=Depends(auth.get_current_user)):
 def get_creature_stats(creature_id: int, user=Depends(auth.get_current_user)):
     """
     Retrieves the stats of the specified creature, including their current hunger and happiness levels,
-    and their affinity with the user.
+    their affinity with the user, and evolution stage
     """
     try:
         with db.engine.begin() as connection:
@@ -631,7 +631,8 @@ def breed_creatures(new: NewCreature, user=Depends(auth.get_current_user)):
 @router.post("/{creature_id}/evolve")
 def evolve_creature(creature_id: int, user=Depends(auth.get_current_user)):
     """
-    Evolves a creature to the next stage.
+    Evolves a creature to the next stage. Creature must be adopted by the user.
+    Creatures cannot evovle beyond stage 3
     """
     try:
         with db.engine.begin() as connection:
