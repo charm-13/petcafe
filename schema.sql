@@ -115,8 +115,7 @@ create table
     quantity integer not null,
     constraint users_inventory_pkey primary key (id),
     constraint users_inventory_treat_sku_fkey1 foreign key (treat_sku) references treats (sku) on update cascade,
-    constraint users_inventory_user_id_fkey foreign key (user_id) references users (id) on update cascade on delete cascade,
-    constraint users_inventory_quantity_check check ((quantity > 0))
+    constraint users_inventory_user_id_fkey foreign key (user_id) references users (id) on update cascade on delete cascade
   ) tablespace pg_default;
 
   create view public.user_inventory_view as

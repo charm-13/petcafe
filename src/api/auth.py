@@ -7,14 +7,19 @@ import dotenv
 dotenv.load_dotenv()
 
 url: str = os.environ.get("SUPABASE_URL")
+
 key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
+
+adminkey: str = os.environ.get("SUPABASE_ADMIN_KEY")
+adminsupabase: Client = create_client(url, adminkey)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
 ):
     try:
-        return supabase.auth.get_user(credentials.credentials)
+        user = supabase.auth.get_user(credentials.credentials)
+        return user.user
 
     except Exception:
         raise HTTPException(

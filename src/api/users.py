@@ -64,13 +64,13 @@ async def register(user: NewUser):
                 .one_or_none()
             )
 
-            if existing:
+            if existing: 
                 raise HTTPException(
                     status_code=409,
                     detail=f"Username '{user.username}' is already taken.",
                 )
 
-            auth_response = await auth.supabase.auth.sign_up(
+            auth_response = auth.supabase.auth.sign_up(
                 {"email": user.email, "password": user.password}
             )
 
@@ -83,28 +83,38 @@ async def register(user: NewUser):
             connection.execute(
                 sqlalchemy.text(
                     """
-                    INSERT INTO users (user_id, username)
+                    INSERT INTO users (id, username)
                     VALUES (:user_id, :username)
                     """
                 ),
                 {"user_id": auth_response.user.id, "username": user.username},
             )
+            
+            message = "Registration successful. Verify your account through the link emailed before logging in."
+            token = ""
+            
+            if auth_response.session:
+                token = auth_response.session.access_token
+                message = "Registration successful. Check email for verification."
 
         return {
-            "message": "Registration successful. Check your email for verification.",
+            "message": message,
             "user_id": auth_response.user.id,
-            "access_token": auth_response.session.access_token,
+            "access_token": token,
         }
+        
+    except HTTPException as h:
+        raise h
 
     except Exception as e:
         if "auth_response" in locals() and auth_response.user:
             try:
-                auth.supabase.auth.admin.delete_user(auth_response.user.id)
+                auth.adminsupabase.auth.admin.delete_user(auth_response.user.id)
             except Exception as cleanup_error:
                 print(f"[register] Failed to clean up auth user: {cleanup_error}")
 
         raise HTTPException(
-            status_code=500, detail=f"Failed to create user. Error: {e}"
+            status_code=500, detail=f"[register] Failed to create user. Error: {e}"
         )
 
 
@@ -151,13 +161,13 @@ def delete_user(user=Depends(auth.get_current_user)):
                     detail=f"User '{user.id}' does not exist.",
                 )
 
-            try:
-                auth.supabase.auth.admin.delete_user(user.id)
-            except Exception as cleanup_error:
-                print(f"[register] Failed to clean up auth user: {cleanup_error}")
-                raise HTTPException(
-                    status_code=500, detail=f"Failed to create user. Error: {cleanup_error}"
-                )
+        try:
+            auth.adminsupabase.auth.admin.delete_user(user.id)
+        except Exception as cleanup_error:
+            print(f"[register] Failed to remove auth user: {cleanup_error}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to create user. Error: {cleanup_error}"
+            )
 
         return {"message": "Successfully deleted."}
 

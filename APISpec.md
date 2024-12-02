@@ -163,7 +163,7 @@ Creates a new user with the given email, username, and password.
 
 ```json
 {
-  "email": "string", /* example@example.com */
+  "email": "user@example.com", 
   "username": "string",
   "password": "string"
 }
@@ -187,7 +187,7 @@ Logs in user with the given email and password.
 
 ```json
 {
-  "email": "string", /* example@example.com */
+  "email": "user@example.com", /* example@example.com */
   "username": "string",
   "password": "string"
 }
