@@ -22,18 +22,6 @@ class Login(BaseModel):
     password: str
 
 
-class PasswordUpdate(BaseModel):
-    email: EmailStr
-    username: str
-    new_password: str
-
-
-class UsernameUpdate(BaseModel):
-    email: EmailStr
-    password: str
-    new_username: str
-
-
 @router.post("/register")
 async def register(user: NewUser):
     """
@@ -64,7 +52,7 @@ async def register(user: NewUser):
                 .one_or_none()
             )
 
-            if existing: 
+            if existing:
                 raise HTTPException(
                     status_code=409,
                     detail=f"Username '{user.username}' is already taken.",
@@ -89,10 +77,10 @@ async def register(user: NewUser):
                 ),
                 {"user_id": auth_response.user.id, "username": user.username},
             )
-            
+
             message = "Registration successful. Verify your account through the link emailed before logging in."
             token = ""
-            
+
             if auth_response.session:
                 token = auth_response.session.access_token
                 message = "Registration successful. Check email for verification."
@@ -102,7 +90,7 @@ async def register(user: NewUser):
             "user_id": auth_response.user.id,
             "access_token": token,
         }
-        
+
     except HTTPException as h:
         raise h
 

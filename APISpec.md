@@ -173,9 +173,9 @@ Creates a new user with the given email, username, and password.
 
 ```json
 {
-    "message": "string",
+    "message": "string", /* Includes registration success and will let the user know if they need to verify their email before logging in. */
     "user_id": "uuid",
-    "access_token": 
+    "access_token": "string" /* Will be empty if the user needs to verify their email */
 }
 ```
 
@@ -188,7 +188,6 @@ Logs in user with the given email and password.
 ```json
 {
   "email": "user@example.com", /* example@example.com */
-  "username": "string",
   "password": "string"
 }
 ```
@@ -202,7 +201,7 @@ Logs in user with the given email and password.
 }
 ```
 
-### 3.3. Delete User  `/users/{username}/remove` (DELETE)
+### 3.3. Delete User  `/users/remove` (DELETE)
 
 Deletes user profile.
 
@@ -214,7 +213,7 @@ Deletes user profile.
 }
 ```
 
-### 3.4. Get User Inventory `/users/{username}/inventory` (GET)
+### 3.4. Get User Inventory `/users/inventory` (GET)
 
 Retrieves the gold and treat inventory of the user.
 
@@ -233,7 +232,7 @@ Retrieves the gold and treat inventory of the user.
 }
 ```
 
-### 3.5. Get User Adoptions `/users/{username}/adoptions` (GET)
+### 3.5. Get User Adoptions `/users/adoptions` (GET)
 
 Retrieves the name and stage for each creature the user has adopted.
 

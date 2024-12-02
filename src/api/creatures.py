@@ -53,7 +53,7 @@ def get_creatures(user=Depends(auth.get_current_user)):
 
         if not creatures:
             raise HTTPException(
-                status_code=404, detail=f"User {user.id} does not exist."
+                status_code=404, detail=f"User {user.id} not found."
             )
 
         print(f"[get_creatures] User {user.id}'s creature list:", creatures)
