@@ -2,14 +2,14 @@
 ### Python file for constructing a million rows: https://github.com/charm-13/petcafe/blob/main/scripts/populate_db.py
 ### Tables:
 1. Creature_types - Kept types the same to lend more room for unique possible combinations while breeding
-2. Creatures - Added in 1000 fake creatures for users to choose from
-3. Evolution_stages - Kept the same to maintain the standard 3 evolution stages
+2. Creatures - Added 1000 fake creatures for users to choose from.
+3. Evolution_stages - Stayed the same to maintain the standard 3 evolution stages
 4. Purchases - On average, a user might make 50 treat purchases to feed creatures. The purchase quantity would go up in later purchases due to having more gold, leading to them needing to eventually make less purchases
 5. Treats - Kept treats the same
-6. User_creature_connection - Added in 200,000 rows because a user would probably play with 100 creatures on average
-7. User_gold - Added in 400,000 rows. This is a ledgerized table, so we added in 200 rows per user to account for possible purchases and pet interactions.
-8. Users - Added in 2000 fake users, gives us a large and realistic sense of how many people might play this game
-9. Users_inventory - Added in 300,000 rows. This is a edgerized table for user treats, so added in 150 rows per user as average of treat purchases and feeding creatures
+6. User_creature_connection - Added 200,000 rows, estimating that a user will play with on average 100 creatures.
+7. User_gold - Added 400,000 rows. This is a ledgerized table, so we added 200 rows per user to account for possible purchases and pet interactions.
+8. Users - Added 2000 fake users, gives us a large and realistic sense of how many people might play this game
+9. Users_inventory - Added 300,000 rows. This is a ledgerized table for user treats, so added 150 rows per user as an estimated average of treat purchases and feeding creatures.
 
 # Performance results of hitting endpoints
 For each endpoint, list how many ms it took to execute. State which three endpoints were the slowest.
