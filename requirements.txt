@@ -7,3 +7,5 @@ python-dotenv
 pre-commit
 supabase==2.10.0
 pydantic[email]==1.10.18
+Faker 
+numpy
