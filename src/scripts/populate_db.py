@@ -109,7 +109,7 @@ for user in users:
 user_creature_connections = [
     {
         "user_id": user["id"],
-        "creature_id": random.randint(2, num_creatures),
+        "creature_id": random.randint(1, num_creatures),
         "affinity": random.randint(0, 100),
         "is_adopted": fake.boolean(chance_of_getting_true=50),
     }
@@ -188,6 +188,7 @@ with db.engine.begin() as connection:
             INSERT INTO
                 creatures (id, name, type, happiness, hunger)
             VALUES
+                (1, 'Aquaquel', 'water_turtle', 100, 0)
                 (2, 'Blaze', 'fire_lizard', 100, 0),
                 (3, 'Whiskaroo', 'silly_cat', 100, 0),
                 (4, 'Rumbull', 'fighter_cow', 100, 0),
@@ -206,8 +207,7 @@ with db.engine.begin() as connection:
                 (17, 'Shocuff', 'electric_sheep', 100, 0),
                 (18, 'Flyka', 'flying_bug', 100, 0),
                 (19, 'Fayblossom', 'fluffy_fairy', 100, 0),
-                (20, 'Grumblevine', 'grass_dragon', 100, 0),
-                (21, 'Aquaquel', 'water_turtle', 100, 0)
+                (20, 'Grumblevine', 'grass_dragon', 100, 0)
             ON CONFLICT DO NOTHING;
             """
         )
