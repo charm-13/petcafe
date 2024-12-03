@@ -1,6 +1,7 @@
 # Fake Data Modeling
 Should contain a link to the python file you used to construct the million rows of data for your service. Should also contain a writeup explaining how many final rows of data you have in each of your table to get to a million rows AND a justification for why you think your service would scale in that way. There is no single right answer to this, but your reasoning must be justifiable.
 ### Python file for constructing a million rows: https://github.com/charm-13/petcafe/blob/main/scripts/populate_db.py
+We added in 5000 users to our user table. Per user, we added in 50 purchases,
 
 # Performance results of hitting endpoints
 For each endpoint, list how many ms it took to execute. State which three endpoints were the slowest.

@@ -20,12 +20,12 @@ from src import database as db
 # Create a new DB engine based on our connection string
 # db = sqlalchemy.create_engine(database_connection_url(), use_insertmanyvalues=True)
 
-num_users = 5000
+num_users = 2000
 num_creatures = 1000
-num_purchases_per_user = 50
-num_treats_per_user = 50
-num_user_creature_conn = 50
-num_gold_trans = 100
+num_purchases_per_user = 100
+num_treats_per_user = 100
+num_user_creature_conn = 100
+num_gold_trans = 200
 fake = Faker()
 
 users = [{"username": fake.unique.user_name()} for _ in range(num_users)]
