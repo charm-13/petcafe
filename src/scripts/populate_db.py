@@ -261,9 +261,9 @@ with db.engine.begin() as connection:
     connection.execute(
         sqlalchemy.text(
             """
-            INSERT INTO purchases (user_id, item_sku, quantity)
-            VALUES (:user_id, :creature_id, :affinity, :is_adopted)
+            INSERT INTO purchases (user_id, item_sku)
+            VALUES (:user_id, :item_sku)
             """
         ),
-        user_creature_connections,
+        user_purchases,
     )
