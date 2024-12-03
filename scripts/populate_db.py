@@ -20,12 +20,12 @@ from src import database as db
 # Create a new DB engine based on our connection string
 # db = sqlalchemy.create_engine(database_connection_url(), use_insertmanyvalues=True)
 
-num_users = 100000
-num_creatures = 100000
-num_purchases_per_user = 2
-num_treats_per_user = 2
-num_user_creature_conn = 2
-num_gold_trans = 2
+num_users = 5000
+num_creatures = 1000
+num_purchases_per_user = 50
+num_treats_per_user = 50
+num_user_creature_conn = 50
+num_gold_trans = 100
 fake = Faker()
 
 users = [{"username": fake.unique.user_name()} for _ in range(num_users)]
@@ -50,7 +50,7 @@ for user in users:
     treat_totals = {sku: 0 for sku in treat_list}  
     for _ in range(num_treats_per_user):
         sku = fake.random_element(treat_list)
-        change = random.randint(-5, 10)
+        change = random.randint(-1, 10)
         if treat_totals[sku] + change < 0:
             change = random.randint(0, 10)  
         treat_totals[sku] += change
