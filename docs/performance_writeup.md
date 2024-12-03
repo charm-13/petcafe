@@ -1,7 +1,16 @@
 # Fake Data Modeling
 Should contain a link to the python file you used to construct the million rows of data for your service. Should also contain a writeup explaining how many final rows of data you have in each of your table to get to a million rows AND a justification for why you think your service would scale in that way. There is no single right answer to this, but your reasoning must be justifiable.
 ### Python file for constructing a million rows: https://github.com/charm-13/petcafe/blob/main/scripts/populate_db.py
-We added in 5000 users to our user table. Per user, we added in 50 purchases,
+#### Tables:
+1. Creature_types - Kept types the same to lend more room for unique possible combinations while breeding
+2. Creatures - Added in 1000 fake creatures for users to choose from
+3. Evolution_stages - Kept the same to maintain the standard 3 evolution stages
+4. Purchases - On average, a user might make 50 treat purchases
+5. Treats - Kept treats the same
+6. User_creature_connection
+7. User_gold
+8. Users - Added in 2000 fake users, gives us a large and realistic sense of how many people might play this game
+9. Users_inventory
 
 # Performance results of hitting endpoints
 For each endpoint, list how many ms it took to execute. State which three endpoints were the slowest.

@@ -22,8 +22,8 @@ from src import database as db
 
 num_users = 2000
 num_creatures = 1000
-num_purchases_per_user = 100
-num_treats_per_user = 100
+num_purchases_per_user = 50
+num_treats_per_user = 150
 num_user_creature_conn = 100
 num_gold_trans = 200
 fake = Faker()
