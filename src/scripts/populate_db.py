@@ -5,6 +5,9 @@ from faker import Faker
 import numpy as np
 import random
 
+import sys
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+import database as db
 
 def database_connection_url():
     dotenv.load_dotenv()
@@ -15,8 +18,6 @@ def database_connection_url():
     DB_NAME: str = os.environ.get("POSTGRES_DB")
     return f"postgresql://{DB_USER}:{DB_PASSWD}@{DB_SERVER}:{DB_PORT}/{DB_NAME}"
 
-
-import database as db
 
 # From Pierce's code - do this if there is a new way to ceate DB engine with docker
 # Create a new DB engine based on our connection string
