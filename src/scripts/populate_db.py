@@ -1,13 +1,13 @@
-from datetime import datetime
 import os
 import random
 import sys
+from datetime import datetime
 
 import dotenv
 import sqlalchemy
 from faker import Faker
 
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import database as db
 
 
@@ -34,11 +34,6 @@ num_gold_trans = 200
 fake = Faker()
 
 
-print(datetime.now(), "| Generating fake users.")
-users = [
-    {"id": fake.unique.uuid4(), "username": fake.unique.user_name()}
-    for _ in range(num_users)
-]
 treat_list = [
     "CLOUD_CANDY",
     "CRUMBLY_COOKIE",
@@ -51,25 +46,32 @@ treat_list = [
     "RAZZ_BERRY",
     "SARDINE",
 ]
+
+creature_types = [
+    "water_turtle",
+    "fire_lizard",
+    "grass_dragon",
+    "sea_ghost",
+    "psychic_unicorn",
+    "fighter_cow",
+    "silly_cat",
+    "electric_sheep",
+    "fluffy_fairy",
+    "flying_bug",
+]
+
+print(datetime.now(), "| Generating fake users.")
+users = [
+    {"id": fake.unique.uuid4(), "username": fake.unique.user_name()}
+    for _ in range(num_users)
+]
+
 print(datetime.now(), "| Generating creatures.")
 creatures = [
     {
         "id": i,
         "name": fake.unique.name(),
-        "type": fake.random_element(
-            elements=[
-                "water_turtle",
-                "fire_lizard",
-                "grass_dragon",
-                "sea_ghost",
-                "psychic_unicorn",
-                "fighter_cow",
-                "silly_cat",
-                "electric_sheep",
-                "fluffy_fairy",
-                "flying_bug",
-            ]
-        ),
+        "type": fake.random_element(elements=creature_types),
         "happiness": random.randint(0, 100),
         "hunger": random.randint(0, 100),
         "stage": random.randint(1, 3),
@@ -112,16 +114,19 @@ for user in users:
         )
 
 print(datetime.now(), "| Generating creature-user connections.")
-user_creature_connections = [
-    {
-        "user_id": user["id"],
-        "creature_id": random.randint(1, len(creatures) + 21),
-        "affinity": random.randint(0, 100),
-        "is_adopted": fake.boolean(chance_of_getting_true=50),
-    }
-    for user in users
-    for i in range(num_user_creature_conn)
-]
+user_creature_connections = []
+creature_ids = [cr["id"] for cr in creatures]
+for user in users:
+    creature_conn_list = random.sample(creature_ids, num_user_creature_conn)
+    for creature_id in creature_conn_list:
+        user_creature_connections.append(
+            {
+                "user_id": user["id"],
+                "creature_id": creature_id,
+                "affinity": random.randint(0, 100),
+                "is_adopted": fake.boolean(chance_of_getting_true=25),
+            }
+        )
 
 print(datetime.now(), "| Generating purchases.")
 user_purchases = []
@@ -231,6 +236,7 @@ with db.engine.begin() as connection:
         ),
         users,
     )
+
     print(datetime.now(), "| Inserting creatures")
     connection.execute(
         sqlalchemy.text(
@@ -241,6 +247,7 @@ with db.engine.begin() as connection:
         ),
         creatures,
     )
+
     print(datetime.now(), "| Inserting inventory")
     connection.execute(
         sqlalchemy.text(
@@ -251,6 +258,7 @@ with db.engine.begin() as connection:
         ),
         user_inv,
     )
+
     print(datetime.now(), "| Inserting gold")
     connection.execute(
         sqlalchemy.text(
@@ -261,6 +269,7 @@ with db.engine.begin() as connection:
         ),
         user_gold,
     )
+
     print(datetime.now(), "| Inserting connections")
     connection.execute(
         sqlalchemy.text(
@@ -271,6 +280,7 @@ with db.engine.begin() as connection:
         ),
         user_creature_connections,
     )
+
     print(datetime.now(), "| Inserting purchases")
     connection.execute(
         sqlalchemy.text(
@@ -281,4 +291,5 @@ with db.engine.begin() as connection:
         ),
         user_purchases,
     )
+
     print(datetime.now(), "| Done.")
