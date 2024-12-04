@@ -45,6 +45,13 @@ treat_list = [
     "PINAP_BERRY",
     "RAZZ_BERRY",
     "SARDINE",
+    "SEAWEED_SNACK",
+    "SHADOW_BREAD",
+    "SHINY_BERRY",
+    "SPICE_COOKIE",
+    "STEAK_SKEWER",
+    "TAIYAKI",
+    "VANILLA_FLUFF",
 ]
 
 creature_types = [
