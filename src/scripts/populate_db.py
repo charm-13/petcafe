@@ -1,13 +1,15 @@
-import sqlalchemy
+from datetime import datetime
 import os
-import dotenv
-from faker import Faker
-import numpy as np
 import random
-
 import sys
+
+import dotenv
+import sqlalchemy
+from faker import Faker
+
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 import database as db
+
 
 def database_connection_url():
     dotenv.load_dotenv()
@@ -32,6 +34,7 @@ num_gold_trans = 200
 fake = Faker()
 
 
+print(datetime.now(), "| Generating fake users.")
 users = [
     {"id": fake.unique.uuid4(), "username": fake.unique.user_name()}
     for _ in range(num_users)
@@ -48,6 +51,7 @@ treat_list = [
     "RAZZ_BERRY",
     "SARDINE",
 ]
+print(datetime.now(), "| Generating creatures.")
 creatures = [
     {
         "id": i,
@@ -73,6 +77,7 @@ creatures = [
     for i in range(21, num_creatures + 1)
 ]
 
+print(datetime.now(), "| Generating user inventories.")
 user_inv = []
 for user in users:
     treat_totals = {sku: 0 for sku in treat_list}
@@ -90,7 +95,7 @@ for user in users:
             }
         )
 
-
+print(datetime.now(), "| Generating gold transactions.")
 user_gold = []
 for user in users:
     total_gold = 0
@@ -106,7 +111,7 @@ for user in users:
             }
         )
 
-
+print(datetime.now(), "| Generating creature-user connections.")
 user_creature_connections = [
     {
         "user_id": user["id"],
@@ -118,6 +123,7 @@ user_creature_connections = [
     for i in range(num_user_creature_conn)
 ]
 
+print(datetime.now(), "| Generating purchases.")
 user_purchases = []
 for user in users:
     treat_totals = {sku: 0 for sku in treat_list}
@@ -139,7 +145,7 @@ for user in users:
 
 # fake data
 with db.engine.begin() as connection:
-    print("Inserting initial data")
+    print(datetime.now(), "| Inserting initial data")
     connection.execute(
         sqlalchemy.text(
             """
@@ -215,7 +221,7 @@ with db.engine.begin() as connection:
         )
     )
 
-    print("inserting users")
+    print(datetime.now(), "| Inserting users")
     connection.execute(
         sqlalchemy.text(
             """
@@ -225,7 +231,7 @@ with db.engine.begin() as connection:
         ),
         users,
     )
-    print("Inserting creatures")
+    print(datetime.now(), "| Inserting creatures")
     connection.execute(
         sqlalchemy.text(
             """
@@ -235,7 +241,7 @@ with db.engine.begin() as connection:
         ),
         creatures,
     )
-    print("Inserting inventory")
+    print(datetime.now(), "| Inserting inventory")
     connection.execute(
         sqlalchemy.text(
             """
@@ -245,7 +251,7 @@ with db.engine.begin() as connection:
         ),
         user_inv,
     )
-    print("Inserting gold")
+    print(datetime.now(), "| Inserting gold")
     connection.execute(
         sqlalchemy.text(
             """
@@ -255,7 +261,7 @@ with db.engine.begin() as connection:
         ),
         user_gold,
     )
-    print("Inserting connections")
+    print(datetime.now(), "| Inserting connections")
     connection.execute(
         sqlalchemy.text(
             """
@@ -265,7 +271,7 @@ with db.engine.begin() as connection:
         ),
         user_creature_connections,
     )
-    print("Inserting purchases")
+    print(datetime.now(), "| Inserting purchases")
     connection.execute(
         sqlalchemy.text(
             """
@@ -275,3 +281,4 @@ with db.engine.begin() as connection:
         ),
         user_purchases,
     )
+    print(datetime.now(), "| Done.")
