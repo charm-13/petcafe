@@ -151,6 +151,7 @@ for user in users:
                 {
                     "user_id": user["id"],
                     "item_sku": sku,
+                    "quantity": 1
                 }
             )
 
@@ -292,8 +293,8 @@ with db.engine.begin() as connection:
     connection.execute(
         sqlalchemy.text(
             """
-            INSERT INTO purchases (user_id, item_sku)
-            VALUES (:user_id, :item_sku)
+            INSERT INTO purchases (user_id, item_sku, quantity)
+            VALUES (:user_id, :item_sku, :quantity)
             """
         ),
         user_purchases,
