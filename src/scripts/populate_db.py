@@ -139,6 +139,7 @@ for user in users:
 
 # fake data
 with db.engine.begin() as connection:
+    print("Inserting initial data")
     connection.execute(
         sqlalchemy.text(
             """
@@ -213,6 +214,8 @@ with db.engine.begin() as connection:
             """
         )
     )
+
+    print("inserting users")
     connection.execute(
         sqlalchemy.text(
             """
@@ -222,15 +225,17 @@ with db.engine.begin() as connection:
         ),
         users,
     )
+    print("Inserting creatures")
     connection.execute(
         sqlalchemy.text(
             """
-            INSERT INTO creatures (name, type, happiness, hunger)
-            VALUES (:name, :type, :happiness, :hunger)
+            INSERT INTO creatures (id, name, type, happiness, hunger)
+            VALUES (:id, :name, :type, :happiness, :hunger)
             """
         ),
         creatures,
     )
+    print("Inserting inventory")
     connection.execute(
         sqlalchemy.text(
             """
@@ -240,6 +245,7 @@ with db.engine.begin() as connection:
         ),
         user_inv,
     )
+    print("Inserting gold")
     connection.execute(
         sqlalchemy.text(
             """
@@ -249,6 +255,7 @@ with db.engine.begin() as connection:
         ),
         user_gold,
     )
+    print("Inserting connections")
     connection.execute(
         sqlalchemy.text(
             """
@@ -258,6 +265,7 @@ with db.engine.begin() as connection:
         ),
         user_creature_connections,
     )
+    print("Inserting purchases")
     connection.execute(
         sqlalchemy.text(
             """
