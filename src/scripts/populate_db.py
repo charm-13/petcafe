@@ -150,7 +150,7 @@ for user in users:
 
 # fake data
 with db.engine.begin() as connection:
-    print(datetime.now(), "| Inserting initial data")
+    print(datetime.now(), "| Inserting initial data.")
     connection.execute(
         sqlalchemy.text(
             """
@@ -226,7 +226,7 @@ with db.engine.begin() as connection:
         )
     )
 
-    print(datetime.now(), "| Inserting users")
+    print(datetime.now(), "| Inserting users.")
     connection.execute(
         sqlalchemy.text(
             """
@@ -237,7 +237,7 @@ with db.engine.begin() as connection:
         users,
     )
 
-    print(datetime.now(), "| Inserting creatures")
+    print(datetime.now(), "| Inserting creatures.")
     connection.execute(
         sqlalchemy.text(
             """
@@ -248,7 +248,7 @@ with db.engine.begin() as connection:
         creatures,
     )
 
-    print(datetime.now(), "| Inserting inventory")
+    print(datetime.now(), "| Inserting inventory.")
     connection.execute(
         sqlalchemy.text(
             """
@@ -259,7 +259,7 @@ with db.engine.begin() as connection:
         user_inv,
     )
 
-    print(datetime.now(), "| Inserting gold")
+    print(datetime.now(), "| Inserting gold.")
     connection.execute(
         sqlalchemy.text(
             """
@@ -270,7 +270,7 @@ with db.engine.begin() as connection:
         user_gold,
     )
 
-    print(datetime.now(), "| Inserting connections")
+    print(datetime.now(), "| Inserting connections.")
     connection.execute(
         sqlalchemy.text(
             """
@@ -281,7 +281,7 @@ with db.engine.begin() as connection:
         user_creature_connections,
     )
 
-    print(datetime.now(), "| Inserting purchases")
+    print(datetime.now(), "| Inserting purchases.")
     connection.execute(
         sqlalchemy.text(
             """
