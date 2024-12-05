@@ -53,7 +53,8 @@ Trigger for constraint user_gold_user_id_fkey: time=19.090 calls=1
 Trigger for constraint users_inventory_user_id_fkey: time=15.073 calls=1
 Execution Time: 40.913 ms
 ```
-The query scans the user table to find the specific id
+The query scans the user table to find the specific id, then scans each table that has a foreign key relation to user_id. The user_gold and users_inventory tables take up the most time. 
+We will create an index on users first.
 #### Index
 ```
 CREATE INDEX idx_users ON users (id, username)
@@ -71,7 +72,7 @@ CREATE INDEX idx_users ON users (id, username)
 "Trigger for constraint users_inventory_user_id_fkey: time=0.500 calls=1"
 "Execution Time: 12.247 ms"
 ```
-This had the expected results. It still isn't the fastest amongst the endpoints but the performance improved by more than half.
+This had the expected results. It is still very slow, but the trigger for constraints took a lot less time than before. Users did unfortunately increase by ~0.05 ms, but overall the execution time decreased by over half. 
 ### 2. /users/inventory
 #### 1. `EXPLAIN ANALYZE SELECT username, gold FROM users AS u JOIN gold_view AS g ON g.user_id = u.id AND u.id = {user_id}`
 ```
@@ -94,7 +95,7 @@ Nested Loop  (cost=1000.56..6456.46 rows=1 width=18) (actual time=10.000..12.596
 Planning Time: 0.920 ms
 Execution Time: 12.701 ms
 ```
-The query first scans the user table to find the username and then joins the gold view where it scans each record. 
+The query first scans the user table to find the username and then joins the gold view where it scans each record. Most of the time can be accounted for by the gold_view, which finds the sum of each user's gold. The index from the users tables stays the same.
 
 #### Index
 ```
@@ -143,7 +144,7 @@ Subquery Scan on user_inventory_view  (cost=5804.73..5819.39 rows=49 width=18) (
 Planning Time: 0.605 ms
 Execution Time: 13.060 ms
 ```
-The query runs a scan on the inventory table to find rows with the user id, then the data is sorted using quicksort. Then it finds the treats where the quantity is 0.
+The query runs a scan on the inventory table to find rows with the user id, then the data is sorted using quicksort. Then it finds the treats where the quantity is greater than 0. Similar to the previous query, the user_inventory_view takes up the most time due to the aggregation. The index from the users tables stays the same.
 #### Index
 ```
 CREATE INDEX idx_user_inventory_user_id_quantity ON user_inventory (user_id, quantity);
@@ -195,7 +196,7 @@ Join Filter: ((i.treat_sku = treats.sku) AND (i.user_id = users.id))
 Planning Time: 0.974 ms 
 Execution Time: 15.844 ms 
 ```
-The query joins the users and inventory tables together and scans for the treat sku and user id.
+The query joins the users and inventory tables together and scans for the treat sku and user id. Again, the user_inventory_view takes up the most time, especially since there are two items in the filter, treat_sku and user_id. The index from the users tables stays the same.
 #### Index
 ```
 CREATE INDEX satiety_idx on treats (satiety)
