@@ -196,32 +196,31 @@ Join Filter: ((i.treat_sku = treats.sku) AND (i.user_id = users.id))
 Planning Time: 0.974 ms 
 Execution Time: 15.844 ms 
 ```
-The query joins the users and inventory tables together and scans for the treat sku and user id. Again, the user_inventory_view takes up the most time, especially since there are two items in the filter, treat_sku and user_id. The index from the users tables stays the same.
+The query joins the users and inventory tables together and scans for the treat sku and user id. Again, the user_inventory_view takes up the most time, especially since there are two items in the filter, treat_sku and user_id.
 #### Index
 ```
 CREATE INDEX satiety_idx on treats (satiety)
+CREATE INDEX idx_user_inventory_user_id_quantity ON user_inventory (user_id, quantity);
 ```
 
 #### Rerun explain
 ```
-"Nested Loop Left Join  (cost=5.82..532.10 rows=14 width=54) (actual time=0.132..0.135 rows=1 loops=1)"
+"Nested Loop Left Join  (cost=5.82..532.10 rows=14 width=54) (actual time=0.037..0.038 rows=0 loops=1)"
 "  Join Filter: ((i.treat_sku = treats.sku) AND (i.user_id = users.id))"
-"  ->  Nested Loop  (cost=0.28..9.52 rows=1 width=62) (actual time=0.052..0.055 rows=1 loops=1)"
-"        ->  Seq Scan on treats  (cost=0.00..1.21 rows=1 width=36) (actual time=0.023..0.024 rows=1 loops=1)"
+"  ->  Nested Loop  (cost=0.28..9.52 rows=1 width=62) (actual time=0.037..0.037 rows=0 loops=1)"
+"        ->  Seq Scan on treats  (cost=0.00..1.21 rows=1 width=36) (actual time=0.008..0.010 rows=1 loops=1)"
 "              Filter: (sku = 'HONEY'::text)"
 "              Rows Removed by Filter: 16"
-"        ->  Index Scan using idx_users_id on users  (cost=0.28..8.29 rows=1 width=26) (actual time=0.027..0.028 rows=1 loops=1)"
-"              Index Cond: (id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
-"  ->  GroupAggregate  (cost=5.54..522.42 rows=14 width=34) (actual time=0.076..0.076 rows=1 loops=1)"
+"        ->  Index Scan using users_pkey on users  (cost=0.28..8.29 rows=1 width=26) (actual time=0.026..0.026 rows=0 loops=1)"
+"              Index Cond: (id = 'b6513257-84ce-493f-919f-0b23af442633'::uuid)"
+"  ->  GroupAggregate  (cost=5.54..522.42 rows=14 width=34) (never executed)"
 "        Group Key: i.user_id, i.treat_sku"
-"        ->  Bitmap Heap Scan on users_inventory i  (cost=5.54..522.17 rows=14 width=30) (actual time=0.055..0.070 rows=15 loops=1)"
-"              Recheck Cond: (user_id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"        ->  Bitmap Heap Scan on users_inventory i  (cost=5.54..522.17 rows=14 width=30) (never executed)"
+"              Recheck Cond: (user_id = 'b6513257-84ce-493f-919f-0b23af442633'::uuid)"
 "              Filter: (treat_sku = 'HONEY'::text)"
-"              Rows Removed by Filter: 135"
-"              Heap Blocks: exact=2"
-"              ->  Bitmap Index Scan on idx_user_inventory_user_id_quantity  (cost=0.00..5.54 rows=149 width=0) (actual time=0.033..0.033 rows=150 loops=1)"
-"                    Index Cond: (user_id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
-"Planning Time: 1.328 ms"
-"Execution Time: 0.237 ms"
+"              ->  Bitmap Index Scan on idx_user_inventory_user_id_quantity  (cost=0.00..5.54 rows=149 width=0) (never executed)"
+"                    Index Cond: (user_id = 'b6513257-84ce-493f-919f-0b23af442633'::uuid)"
+"Planning Time: 1.257 ms"
+"Execution Time: 0.148 ms"
 ```
 The execution time is a lot faster as expected.
