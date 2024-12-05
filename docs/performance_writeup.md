@@ -13,7 +13,6 @@
 9. Users_inventory - Added 300,000 rows. This is a ledgerized table for user treats, so added 150 rows per user as an estimated average of treat purchases and feeding creatures.
 
 ## Performance Results of Endpoints
-For each endpoint, list how many ms it took to execute. State which three endpoints were the slowest.
 
 ### Users
 1. **/users/register:** (2 queries) 0.386 + 0.23 = 0.616ms
@@ -41,10 +40,7 @@ For each endpoint, list how many ms it took to execute. State which three endpoi
 3. /creatures/{creature_id}/feed/{treat_sku}
 
 ## Performance Tuning
-For each of the three slowest endpoints, run explain on the queries and copy the results of running explain into the markdown file. Then describe what the explain means to you and what index you will add to speed up the query. Then copy the command for adding that index into the markdown and rerun explain. Then copy the results of that explain into the markdown and say if it had the performance improvement you expected. Continue this process until the three slowest endpoints are now acceptably fast (think about what this means for your service).
-
-### /users/remove
-
+### 1. /users/remove
 #### `EXPLAIN ANALYZE DELETE FROM users WHERE id = {user_id}`
 ```
 Delete on users  (cost=0.28..8.29 rows=0 width=0) (actual time=0.127..0.127 rows=0 loops=1)
@@ -57,9 +53,26 @@ Trigger for constraint user_gold_user_id_fkey: time=19.090 calls=1
 Trigger for constraint users_inventory_user_id_fkey: time=15.073 calls=1
 Execution Time: 40.913 ms
 ```
+The query scans the user table to find the specific id
+#### Index
+```
+CREATE INDEX idx_users ON users (id, username)
+```
 
-### /users/inventory
-
+#### Rerun explain
+```
+"Delete on users  (cost=0.28..8.29 rows=0 width=0) (actual time=0.177..0.177 rows=0 loops=1)"
+"  ->  Index Scan using idx_users on users  (cost=0.28..8.29 rows=1 width=6) (actual time=0.040..0.041 rows=1 loops=1)"
+"        Index Cond: (id = 'b6513257-84ce-493f-919f-0b23af442633'::uuid)"
+"Planning Time: 0.347 ms"
+"Trigger for constraint purchases_user_id_fkey: time=7.449 calls=1"
+"Trigger for constraint user_creature_connection_user_id_fkey: time=3.502 calls=1"
+"Trigger for constraint user_gold_user_id_fkey: time=0.534 calls=1"
+"Trigger for constraint users_inventory_user_id_fkey: time=0.500 calls=1"
+"Execution Time: 12.247 ms"
+```
+This had the expected results. It still isn't the fastest amongst the endpoints but the performance improved by more than half.
+### 2. /users/inventory
 #### 1. `EXPLAIN ANALYZE SELECT username, gold FROM users AS u JOIN gold_view AS g ON g.user_id = u.id AND u.id = {user_id}`
 ```
 Nested Loop  (cost=1000.56..6456.46 rows=1 width=18) (actual time=10.000..12.596 rows=1 loops=1)
@@ -81,7 +94,34 @@ Nested Loop  (cost=1000.56..6456.46 rows=1 width=18) (actual time=10.000..12.596
 Planning Time: 0.920 ms
 Execution Time: 12.701 ms
 ```
+The query first scans the user table to find the username and then joins the gold view where it scans each record. 
 
+#### Index
+```
+CREATE INDEX idx_user_gold_id ON user_gold (user_id)
+```
+
+#### Rerun explain
+```
+"Nested Loop  (cost=6.52..709.97 rows=1 width=18) (actual time=0.152..0.153 rows=1 loops=1)"
+"  ->  Index Scan using idx_users_id on users u  (cost=0.28..8.29 rows=1 width=26) (actual time=0.016..0.016 rows=1 loops=1)"
+"        Index Cond: (id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"  ->  GroupAggregate  (cost=6.24..701.66 rows=1 width=24) (actual time=0.134..0.135 rows=1 loops=1)"
+"        Group Key: u_1.id"
+"        ->  Nested Loop Left Join  (cost=6.24..701.64 rows=1 width=20) (actual time=0.083..0.118 rows=200 loops=1)"
+"              Join Filter: (g.user_id = u_1.id)"
+"              ->  Index Only Scan using idx_users_id on users u_1  (cost=0.28..4.29 rows=1 width=16) (actual time=0.029..0.029 rows=1 loops=1)"
+"                    Index Cond: (id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"                    Heap Fetches: 0"
+"              ->  Bitmap Heap Scan on user_gold g  (cost=5.96..694.86 rows=199 width=20) (actual time=0.051..0.065 rows=200 loops=1)"
+"                    Recheck Cond: (user_id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"                    Heap Blocks: exact=2"
+"                    ->  Bitmap Index Scan on idx_user_gold_id  (cost=0.00..5.92 rows=199 width=0) (actual time=0.033..0.033 rows=200 loops=1)"
+"                          Index Cond: (user_id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"Planning Time: 0.923 ms"
+"Execution Time: 0.271 ms"
+```
+The execution time is a lot faster as expected.
 #### 2. `EXPLAIN ANALYZE SELECT treat_sku AS sku, quantity FROM user_inventory_view WHERE user_id = {user_id} AND quantity > 0`
 ```
 Subquery Scan on user_inventory_view  (cost=5804.73..5819.39 rows=49 width=18) (actual time=10.719..12.964 rows=10 loops=1)
@@ -103,8 +143,36 @@ Subquery Scan on user_inventory_view  (cost=5804.73..5819.39 rows=49 width=18) (
 Planning Time: 0.605 ms
 Execution Time: 13.060 ms
 ```
+The query runs a scan on the inventory table to find rows with the user id, then the data is sorted using quicksort. Then it finds the treats where the quantity is 0.
+#### Index
+```
+CREATE INDEX idx_user_inventory_user_id_quantity ON user_inventory (user_id, quantity);
+```
 
-### /creatures/{creature_id}/feed/{treat_sku}
+#### Rerun explain
+```
+"Nested Loop Left Join  (cost=5.82..532.10 rows=14 width=54) (actual time=0.127..0.130 rows=1 loops=1)"
+"  Join Filter: ((i.treat_sku = treats.sku) AND (i.user_id = users.id))"
+"  ->  Nested Loop  (cost=0.28..9.52 rows=1 width=62) (actual time=0.032..0.034 rows=1 loops=1)"
+"        ->  Seq Scan on treats  (cost=0.00..1.21 rows=1 width=36) (actual time=0.007..0.009 rows=1 loops=1)"
+"              Filter: (sku = 'HONEY'::text)"
+"              Rows Removed by Filter: 16"
+"        ->  Index Scan using idx_users_id on users  (cost=0.28..8.29 rows=1 width=26) (actual time=0.023..0.024 rows=1 loops=1)"
+"              Index Cond: (id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"  ->  GroupAggregate  (cost=5.54..522.42 rows=14 width=34) (actual time=0.091..0.091 rows=1 loops=1)"
+"        Group Key: i.user_id, i.treat_sku"
+"        ->  Bitmap Heap Scan on users_inventory i  (cost=5.54..522.17 rows=14 width=30) (actual time=0.072..0.086 rows=15 loops=1)"
+"              Recheck Cond: (user_id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"              Filter: (treat_sku = 'HONEY'::text)"
+"              Rows Removed by Filter: 135"
+"              Heap Blocks: exact=2"
+"              ->  Bitmap Index Scan on idx_user_inventory_user_id_quantity  (cost=0.00..5.54 rows=149 width=0) (actual time=0.051..0.051 rows=150 loops=1)"
+"                    Index Cond: (user_id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"Planning Time: 1.199 ms"
+"Execution Time: 0.222 ms"
+```
+The execution time decreases by a lot as expected.
+### 3. /creatures/{creature_id}/feed/{treat_sku}
 #### `EXPLAIN ANALYZE SELECT username, sku, satiety, COALESCE(quantity, 0) AS qty FROM treats JOIN users ON users.id = {user_id} AND sku = {treat_sku} LEFT JOIN user_inventory_view AS inv ON inv.treat_sku = sku AND inv.user_id = users.id`
 ```
 Nested Loop Left Join  (cost=1000.43..6260.98 rows=15 width=54) (actual time=13.522..15.748 rows=1 loops=1) 
@@ -127,3 +195,32 @@ Join Filter: ((i.treat_sku = treats.sku) AND (i.user_id = users.id))
 Planning Time: 0.974 ms 
 Execution Time: 15.844 ms 
 ```
+The query joins the users and inventory tables together and scans for the treat sku and user id.
+#### Index
+```
+CREATE INDEX satiety_idx on treats (satiety)
+```
+
+#### Rerun explain
+```
+"Nested Loop Left Join  (cost=5.82..532.10 rows=14 width=54) (actual time=0.132..0.135 rows=1 loops=1)"
+"  Join Filter: ((i.treat_sku = treats.sku) AND (i.user_id = users.id))"
+"  ->  Nested Loop  (cost=0.28..9.52 rows=1 width=62) (actual time=0.052..0.055 rows=1 loops=1)"
+"        ->  Seq Scan on treats  (cost=0.00..1.21 rows=1 width=36) (actual time=0.023..0.024 rows=1 loops=1)"
+"              Filter: (sku = 'HONEY'::text)"
+"              Rows Removed by Filter: 16"
+"        ->  Index Scan using idx_users_id on users  (cost=0.28..8.29 rows=1 width=26) (actual time=0.027..0.028 rows=1 loops=1)"
+"              Index Cond: (id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"  ->  GroupAggregate  (cost=5.54..522.42 rows=14 width=34) (actual time=0.076..0.076 rows=1 loops=1)"
+"        Group Key: i.user_id, i.treat_sku"
+"        ->  Bitmap Heap Scan on users_inventory i  (cost=5.54..522.17 rows=14 width=30) (actual time=0.055..0.070 rows=15 loops=1)"
+"              Recheck Cond: (user_id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"              Filter: (treat_sku = 'HONEY'::text)"
+"              Rows Removed by Filter: 135"
+"              Heap Blocks: exact=2"
+"              ->  Bitmap Index Scan on idx_user_inventory_user_id_quantity  (cost=0.00..5.54 rows=149 width=0) (actual time=0.033..0.033 rows=150 loops=1)"
+"                    Index Cond: (user_id = 'deee2d13-1f2d-47dc-a45e-affe740175df'::uuid)"
+"Planning Time: 1.328 ms"
+"Execution Time: 0.237 ms"
+```
+The execution time is a lot faster as expected.
